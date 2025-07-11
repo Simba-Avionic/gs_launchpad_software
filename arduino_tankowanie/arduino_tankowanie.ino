@@ -27,6 +27,7 @@ DFRobot_INA219_IIC czujnik_pradu_1(&Wire, INA219_I2C_ADDRESS4);
 
 #define THRESHOLD_VALVE_POS_CHANGE_SEND 7
 #define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND 85
+#define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms 3000
 
 unsigned long time_last_check_commands_input = 0;
 unsigned long time_last_sent_valves_position = 0;
@@ -91,6 +92,8 @@ void loop() {
 void check_commands_input()
 {
   static bool first = true;
+  static unsigned long last_command_time = 0;
+
   time_last_check_commands_input = millis();
   if(Serial.available() > 0)
   {
@@ -106,14 +109,15 @@ void check_commands_input()
       valve_feed_hel->setPosition(pos_servo);
 
     first = !first;
-    // n2o_servo_feed.write(pos_servo);
-    // hel_servo_feed.write(pos_servo);
 
-    // byte -= '5';
-    // int add_micro = byte*10;
-    // servo_micro += add_micro;
-    // Serial.println(servo_micro);
-    // n2o_servo_feed.writeMicroseconds(servo_micro);
+    // przyszła komenda
+    last_command_time = millis();
+  }
+
+  // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
+  if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
+  {
+    goToSafeState();
   }
 }
 
