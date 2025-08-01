@@ -40,6 +40,8 @@ DFRobot_INA219_IIC czujnik_pradu_1(&Wire, INA219_I2C_ADDRESS4);
 #define PIN_BUTTON_VENTS 8
 #define PIN_BUTTON_FEEDS 7
 
+#define PIN_DIODE 13
+
 unsigned long time_last_check_commands_input = 0;
 unsigned long time_last_sent_valves_position = 0;
 unsigned long time_last_sent_power_sensors = 0;
@@ -64,6 +66,8 @@ void printPower();
 void printPosition(int pos1, int pos2);
 
 void setup() {
+  pinMode(PIN_DIODE, OUTPUT);
+  digitalWrite(PIN_DIODE, LOW);
   pinMode(PIN_BUTTON_DECOUPLERS, INPUT_PULLUP);
   pinMode(PIN_BUTTON_VENTS, INPUT_PULLUP);
   pinMode(PIN_BUTTON_FEEDS, INPUT_PULLUP);
@@ -94,6 +98,7 @@ void setup() {
   Serial.println();
 
   goToSafeState();
+  digitalWrite(PIN_DIODE, HIGH);
 }
 
 void loop() {
