@@ -11,8 +11,14 @@
 // #define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
 // #include "../include/oberon/GSUART.hpp"
 
-ServoValve* valve_feed_n2o;
-ServoValve* valve_feed_hel;
+ServoValve* valve_feed_oxidizer;
+ServoValve* valve_feed_pressurizer;
+
+Decoupler* decoupler_oxidizer;
+Decoupler* decoupler_pressurizer;
+
+ElectroValve* valve_vent_oxidizer;
+ElectroValve* valve_vent_pressurizer;
 
 DFRobot_INA219_IIC czujnik_pradu_1(&Wire, INA219_I2C_ADDRESS4);
 // tutaj drugi czujnik
@@ -23,11 +29,16 @@ DFRobot_INA219_IIC czujnik_pradu_1(&Wire, INA219_I2C_ADDRESS4);
 #define INTERVAL_SEND_POWER_SENSORS 1000
 #define INTERVAL_CHECK_POWER_SENSORS 200
 #define INTERVAL_SEND_UART_STATS 4000
+#define INTERVAL_CHECK_BUTTONS 100
 #define DELAY_MAIN_LOOP 1
 
 #define THRESHOLD_VALVE_POS_CHANGE_SEND 7
 #define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND 85
 #define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms 3000
+
+#define PIN_BUTTON_DECOUPLERS 10
+#define PIN_BUTTON_VENTS 8
+#define PIN_BUTTON_FEEDS 7
 
 unsigned long time_last_check_commands_input = 0;
 unsigned long time_last_sent_valves_position = 0;
@@ -35,10 +46,14 @@ unsigned long time_last_sent_power_sensors = 0;
 unsigned long time_last_sent_uart_stats = 0;
 unsigned long time_last_check_valves_position = 0;
 unsigned long time_last_check_power_sensors = 0;
+unsigned long time_last_check_buttons = 0;
+
+unsigned long last_command_time = 0;
 
 void check_commands_input();
 void check_valves_position();
 void check_power_sensors();
+void check_buttons();
 void send_valves_position();
 void send_power_sensors();
 void send_uart_stats();
@@ -49,11 +64,27 @@ void printPower();
 void printPosition(int pos1, int pos2);
 
 void setup() {
+  pinMode(PIN_BUTTON_DECOUPLERS, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_VENTS, INPUT_PULLUP);
+  pinMode(PIN_BUTTON_FEEDS, INPUT_PULLUP);
+
   Serial.begin(9600);
   while(!Serial);
 
-  valve_feed_n2o = new ServoValve(9, 600, 2440, A0);
-  valve_feed_hel = new ServoValve(6, 600, 2440, A1);
+  valve_feed_oxidizer = new ServoValve(9, 600, 2440, A0);
+  valve_feed_oxidizer->close();
+  valve_feed_pressurizer = new ServoValve(6, 600, 2440, A1);
+  valve_feed_pressurizer->close();
+
+  decoupler_oxidizer = new Decoupler(2, 3);
+  decoupler_oxidizer->close();
+  decoupler_pressurizer = new Decoupler(4, 5);
+  decoupler_pressurizer->close();
+
+  valve_vent_oxidizer = new ElectroValve(11);
+  valve_vent_oxidizer->close();
+  valve_vent_pressurizer = new ElectroValve(12);
+  valve_vent_pressurizer->close();
 
   Serial.println();
   while(czujnik_pradu_1.begin() != true) {
@@ -67,6 +98,9 @@ void setup() {
 
 void loop() {
   unsigned long time_now = millis();
+
+  if (time_now >= time_last_check_buttons + INTERVAL_CHECK_BUTTONS)
+    check_buttons();
 
   if(time_now >= time_last_check_commands_input + INTERVAL_CHECK_COMMANDS_INPUT)
     check_commands_input();
@@ -92,7 +126,6 @@ void loop() {
 void check_commands_input()
 {
   static bool first = true;
-  static unsigned long last_command_time = 0;
 
   time_last_check_commands_input = millis();
   if(Serial.available() > 0)
@@ -104,13 +137,12 @@ void check_commands_input()
     byte -= '0';
     int pos_servo = byte*20;
     if (first)
-      valve_feed_n2o->setPosition(pos_servo);
+      valve_feed_oxidizer->setPosition(pos_servo);
     else
-      valve_feed_hel->setPosition(pos_servo);
+      valve_feed_pressurizer->setPosition(pos_servo);
 
     first = !first;
 
-    // przyszła komenda
     last_command_time = millis();
   }
 
@@ -124,9 +156,9 @@ void check_commands_input()
 void check_valves_position()
 {
   time_last_check_valves_position = millis();
-  auto pos1 = valve_feed_n2o->readPosition();
-  auto pos2 = valve_feed_hel->readPosition();
-  if (valve_feed_n2o->posChange() >= THRESHOLD_VALVE_POS_CHANGE_SEND || valve_feed_hel->posChange() >= THRESHOLD_VALVE_POS_CHANGE_SEND)
+  auto pos1 = valve_feed_oxidizer->readPosition();
+  auto pos2 = valve_feed_pressurizer->readPosition();
+  if (valve_feed_oxidizer->posChange() >= THRESHOLD_VALVE_POS_CHANGE_SEND || valve_feed_pressurizer->posChange() >= THRESHOLD_VALVE_POS_CHANGE_SEND)
     send_valves_position();
 }
 
@@ -151,11 +183,67 @@ void check_power_sensors()
   // czujnik_pradu_2_last_current_mA = current_2;
 }
 
+void check_buttons()
+{
+  time_last_check_buttons = millis();
+
+  static bool button_decouplers_last_pressed = false;
+  static bool button_vents_last_pressed = false;
+  static bool button_feeds_last_pressed = false;
+
+  bool anything_pressed = false;
+
+  if (digitalRead(PIN_BUTTON_DECOUPLERS) == LOW) {
+    anything_pressed = true;
+    // Serial.println("Otworzyc decouplery");
+    button_decouplers_last_pressed = true;
+    decoupler_oxidizer->open();
+    decoupler_pressurizer->open();
+  }
+  else if (button_decouplers_last_pressed) {
+    // Serial.println("Zamknac decouplery");
+    button_decouplers_last_pressed = false;
+    decoupler_oxidizer->close();
+    decoupler_pressurizer->close();
+  }
+
+  if (digitalRead(PIN_BUTTON_VENTS) == LOW) {
+    anything_pressed = true;
+    // Serial.println("Otworzyc venty");
+    button_vents_last_pressed = true;
+    valve_vent_oxidizer->open();
+    valve_vent_pressurizer->open();
+  }
+  else if (button_vents_last_pressed) {
+    // Serial.println("Zamknac venty");
+    button_vents_last_pressed = false;
+    valve_vent_oxidizer->close();
+    valve_vent_pressurizer->close();
+  }
+
+  if (digitalRead(PIN_BUTTON_FEEDS) == LOW) {
+    anything_pressed = true;
+    // Serial.println("Otworzyc feedy");
+    button_feeds_last_pressed = true;
+    valve_feed_oxidizer->openWithExtraSteps();
+    valve_feed_pressurizer->openWithExtraSteps();
+  }
+  else if (button_feeds_last_pressed) {
+    // Serial.println("Zamknac feedy");
+    button_feeds_last_pressed = false;
+    valve_feed_oxidizer->close();
+    valve_feed_pressurizer->close();
+  }
+
+  if (anything_pressed)
+    last_command_time = millis();
+}
+
 void send_valves_position()
 {
   time_last_sent_valves_position = millis();
-  auto pos1 = valve_feed_n2o->position();
-  auto pos2 = valve_feed_hel->position();
+  auto pos1 = valve_feed_oxidizer->position();
+  auto pos2 = valve_feed_pressurizer->position();
   printPosition(pos1, pos2);
 }
 
@@ -179,21 +267,21 @@ void printPosition(int pos1, int pos2)
 
 void printPower()
 {
-    Serial.print(czujnik_pradu_1.getBusVoltage_V(), 2);
-    Serial.print("V ");
-    Serial.print(czujnik_pradu_1.getShuntVoltage_mV(), 3);
-    Serial.print("mV ");
-    Serial.print(czujnik_pradu_1.getCurrent_mA(), 1);
-    Serial.print("mA ");
-    Serial.print(czujnik_pradu_1.getPower_mW(), 1);
-    Serial.print("mW ");
-    Serial.println("");
+    // Serial.print(czujnik_pradu_1.getBusVoltage_V(), 2);
+    // Serial.print("V ");
+    // Serial.print(czujnik_pradu_1.getShuntVoltage_mV(), 3);
+    // Serial.print("mV ");
+    // Serial.print(czujnik_pradu_1.getCurrent_mA(), 1);
+    // Serial.print("mA ");
+    // Serial.print(czujnik_pradu_1.getPower_mW(), 1);
+    // Serial.print("mW ");
+    // Serial.println("");
 }
 
 void goToSafeState()
 {
-  valve_feed_n2o->setPosition(160);
-  valve_feed_hel->setPosition(160);
+  valve_feed_oxidizer->setPosition(160);
+  valve_feed_pressurizer->setPosition(160);
   // tutaj także zawory ventów
   // tutaj nie decoupler chyba
 }
