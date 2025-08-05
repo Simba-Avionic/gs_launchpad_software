@@ -1,0 +1,4 @@
+[submodule "gs_interfaces"]
+	path = gs_interfaces
+	url = https://github.com/Simba-Avionic/gs_interfaces.git
+	branch = master
