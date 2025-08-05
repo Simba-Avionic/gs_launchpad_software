@@ -206,6 +206,9 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::UART_STATS:
       receivedMsg = new MsgUartStats();
       break;
+    case MsgID::POWER_TANKING:
+      receivedMsg = new MsgPowerTanking();
+      break;
     default:
       receivedMsg = nullptr;
       return;
