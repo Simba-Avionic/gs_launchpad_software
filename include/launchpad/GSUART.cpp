@@ -396,15 +396,17 @@ void MsgUartStats::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgPowerTanking::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(PowerSensor) * 2;
-  memcpy(bytes_out, &v7_4, sizeof(PowerSensor));
-  memcpy(bytes_out + sizeof(PowerSensor), &v12, sizeof(PowerSensor));
+  #define SIZE MsgPowerTanking::PowerSensor::_STRUCT_SIZE
+  *size_out = SIZE * 2;
+  memcpy(bytes_out, &v7_4, SIZE);
+  memcpy(bytes_out + SIZE, &v12, SIZE);
 }
 
 void MsgPowerTanking::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(PowerSensor) * 2) return;
-  memcpy(&v7_4, bytes_in, sizeof(PowerSensor));
-  memcpy(&v12, bytes_in + sizeof(PowerSensor), sizeof(PowerSensor));
+  #define SIZE MsgPowerTanking::PowerSensor::_STRUCT_SIZE
+  if (bytes_in == nullptr || size_in < SIZE * 2) return;
+  memcpy(&v7_4, bytes_in, SIZE);
+  memcpy(&v12, bytes_in + SIZE, SIZE);
 }
 
 void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx) {

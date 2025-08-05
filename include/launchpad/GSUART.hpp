@@ -1,10 +1,10 @@
 // #define GSUART_PLATFORM 0      //    0 - arduino - GSUART_PLATFORM_ARDUINO
                                 //    1 - rpi ubuntu - GSUART_PLATFORM_RPI_UBUNTU
-// #define GSUART_PLATFORM_ARDUINO     0
-// #define GSUART_PLATFORM_RPI_UBUNTU  1
-// #ifndef GSUART_PLATFORM
-// #define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
-// #endif
+#define GSUART_PLATFORM_ARDUINO     0
+#define GSUART_PLATFORM_RPI_UBUNTU  1
+#ifndef GSUART_PLATFORM
+#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
+#endif
 #pragma once
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
@@ -223,6 +223,8 @@ namespace GSUART
         struct PowerSensor {
             float V;
             float mA;
+        private:
+            static constexpr size_t _STRUCT_SIZE = 2 * sizeof(float);
         } v7_4, v12;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
