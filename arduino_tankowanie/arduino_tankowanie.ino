@@ -20,8 +20,8 @@ Decoupler* decoupler_pressurizer;
 ElectroValve* valve_vent_oxidizer;
 ElectroValve* valve_vent_pressurizer;
 
-DFRobot_INA219_IIC czujnik_pradu_1(&Wire, INA219_I2C_ADDRESS4);
-// tutaj drugi czujnik
+DFRobot_INA219_IIC czujnik_pradu_7v(&Wire, INA219_I2C_ADDRESS4);
+DFRobot_INA219_IIC czujnik_pradu_12v(&Wire, INA219_I2C_ADDRESS1);
 
 #define INTERVAL_CHECK_COMMANDS_INPUT 10
 #define INTERVAL_SEND_VALVES_POSITION 1000
@@ -90,12 +90,19 @@ void setup() {
   valve_vent_pressurizer = new ElectroValve(12);
   valve_vent_pressurizer->close();
 
-  Serial.println();
-  while(czujnik_pradu_1.begin() != true) {
-        Serial.println("czujnik_pradu_1 begin failed");
-        delay(2000);
-    }
-  Serial.println();
+  while(czujnik_pradu_7v.begin() != true) {
+    Serial.println("czujnik_pradu_7v begin failed");
+    // tutaj wyslij blad zalaczenia czujnika
+    delay(1000);
+  }
+  Serial.println("czujnik_pradu_7v begin OK");
+
+  while(czujnik_pradu_12v.begin() != true) {
+    Serial.println("czujnik_pradu_12v begin failed");
+    // tutaj wyslij blad zalaczenia czujnika
+    delay(1000);
+  }
+  Serial.println("czujnik_pradu_12v begin OK");
 
   goToSafeState();
   digitalWrite(PIN_DIODE, HIGH);
@@ -170,22 +177,22 @@ void check_valves_position()
 void check_power_sensors()
 {
   time_last_check_power_sensors = millis();
-  static float czujnik_pradu_1_last_current_mA = 0.0f;
-  static float czujnik_pradu_2_last_current_mA = 0.0f;
+  static float czujnik_pradu_7v_last_current_mA = 0.0f;
+  static float czujnik_pradu_12v_last_current_mA = 0.0f;
 
-  auto current_1 = czujnik_pradu_1.getCurrent_mA();
-  // auto current_2 = czujnik_pradu_2.getCurrent_mA();
-  auto diff1 = current_1 - czujnik_pradu_1_last_current_mA;
+  auto current_1 = czujnik_pradu_7v.getCurrent_mA();
+  auto current_2 = czujnik_pradu_12v.getCurrent_mA();
+  auto diff1 = current_1 - czujnik_pradu_7v_last_current_mA;
   if (diff1 < 0) diff1 *= -1.0f;
 
-  // auto diff2 = current_2 - czujnik_pradu_2_last_current_mA;
-  // if (diff2 < 0) diff2 *= -1.0f;
+  auto diff2 = current_2 - czujnik_pradu_12v_last_current_mA;
+  if (diff2 < 0) diff2 *= -1.0f;
 
-  if (diff1 > THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND)
+  if (diff1 >= THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND || diff2 >= THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND)
     send_power_sensors();
 
-  czujnik_pradu_1_last_current_mA = current_1;
-  // czujnik_pradu_2_last_current_mA = current_2;
+  czujnik_pradu_7v_last_current_mA = current_1;
+  czujnik_pradu_12v_last_current_mA = current_2;
 }
 
 void check_buttons()
@@ -276,11 +283,13 @@ void printPower()
     // Serial.print("V ");
     // Serial.print(czujnik_pradu_1.getShuntVoltage_mV(), 3);
     // Serial.print("mV ");
-    // Serial.print(czujnik_pradu_1.getCurrent_mA(), 1);
-    // Serial.print("mA ");
+    Serial.print(czujnik_pradu_7v.getCurrent_mA(), 1);
+    Serial.print("mA ");
+    Serial.print(czujnik_pradu_12v.getCurrent_mA(), 1);
+    Serial.print("mA ");
     // Serial.print(czujnik_pradu_1.getPower_mW(), 1);
     // Serial.print("mW ");
-    // Serial.println("");
+    Serial.println("");
 }
 
 void goToSafeState()
