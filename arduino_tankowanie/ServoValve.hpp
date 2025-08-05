@@ -58,9 +58,14 @@ public:
   // this state may be usefull later
   void dontMove();
 
+  // returns current steering signal
+  bool isOpen();
+
 private:
   int pin_1;
   int pin_2;
+
+  bool is_open = false;
 };
 
 class ElectroValve
@@ -75,6 +80,11 @@ public:
   // currently used valve is Normally Closed so this is the default state, also with no power at all
   void close();
 
+  // returns current steering signal
+  bool isOpen();
+
 private:
   int pin;
+  
+  bool is_open = false;
 };

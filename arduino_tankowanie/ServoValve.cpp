@@ -81,6 +81,7 @@ void Decoupler::open()
   digitalWrite(pin_1, HIGH);
   digitalWrite(pin_2, LOW);
   // Serial.println("Open decoupler!");
+  is_open = true;
 }
 
 void Decoupler::close()
@@ -88,6 +89,7 @@ void Decoupler::close()
   digitalWrite(pin_1, LOW);
   digitalWrite(pin_2, HIGH);
   // Serial.println("Close decoupler!");
+  is_open = false;
 }
 
 void Decoupler::dontMove()
@@ -95,6 +97,11 @@ void Decoupler::dontMove()
   digitalWrite(pin_1, HIGH);
   digitalWrite(pin_2, HIGH);
   // Serial.println("Stop decoupler!");
+}
+
+bool Decoupler::isOpen()
+{
+  return is_open;
 }
 
 
@@ -107,9 +114,16 @@ ElectroValve::ElectroValve(int pin)
 void ElectroValve::open()
 {
   digitalWrite(pin, HIGH);
+  is_open = true;
 }
 
 void ElectroValve::close()
 {
   digitalWrite(pin, LOW);
+  is_open = false;
+}
+
+bool ElectroValve::isOpen()
+{
+  return is_open;
 }
