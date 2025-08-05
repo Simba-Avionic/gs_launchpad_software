@@ -153,7 +153,6 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     return;
   if (msg_bytes[0] != RAMKA_START || msg_bytes[size - 1] != RAMKA_STOP)
     return;
-
   uartStats.stats.totalMessagesReceived++;
   // remove special values, in place algorithm :O <- zamiast przepisywac do nowego bufora mozna przenosic w tym samym buforze
   size_t conv_idx = 0;
@@ -185,7 +184,6 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     delete receivedMsg;
     receivedMsg = nullptr;
   }
-
   MsgID msgID = (MsgID)msg_bytes[0];
   switch (msgID) {
     case MsgID::TENSO:
@@ -295,7 +293,20 @@ int Messenger::readFromSerialPort(Byte* bytes, const size_t size) {
 #endif
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
-  int bytesRead = serialPort->readBytes(bytes, size);
+  int bytesRead = 0;
+  while (bytesRead < size && serialPort->available() > 0)
+    bytes[bytesRead++] = serialPort->read();
+  // if (bytesRead > 0)
+  // {
+  //   Serial.print(bytesRead);
+  //   Serial.print(": ");
+  // }
+  // for (int i=0; i<bytesRead; i++)
+  // {
+  //   Serial.print(bytes[i], HEX);
+  //   Serial.print(" ");
+  // }
+  // if (bytesRead > 0) Serial.println();
   return bytesRead;
 #endif
 }
