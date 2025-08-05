@@ -9,7 +9,7 @@
 // #define GSUART_PLATFORM_ARDUINO     0
 // #define GSUART_PLATFORM_RPI_UBUNTU  1
 // #define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
-// #include "../include/oberon/GSUART.hpp"
+// #include "../include/launchpad/GSUART.hpp"
 
 ServoValve* valve_feed_oxidizer;
 ServoValve* valve_feed_pressurizer;
