@@ -1,47 +1,48 @@
-#include "Oberon.hpp"
+#include "Launchbox.hpp"
 
-Oberon::Oberon()
+Launchbox::Launchbox()
     : Node("oberon")
 {
     loadCellsLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::LoadCells>("/oberon/launch_tower/tenso", 10);
     loadCellsParamsPublisher = this->create_publisher<gs_interfaces::msg::LoadCellsParams>("/oberon/launch_tower/tenso_params", 3);
     temperatureLaunchPadPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/launch_tower/temperature", 3);
-    loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Oberon::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
+    loadCellsLaunchPadTareSubscription = this->create_subscription<gs_interfaces::msg::LoadCellsTare>("/oberon/launch_tower/tenso_tare", 3, std::bind(&Launchbox::arduinoWyrzutniaTareCallback, this, std::placeholders::_1)); 
     
     powerMonitorPublisher = this->create_publisher<gs_interfaces::msg::Power>("/oberon/power", 5);
     uartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/uart_stats", 3);
     remoteUartStatsPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/launch_tower/remote_uart_stats", 3);
 
-    valveServosPublisher = this->create_publisher<gs_interfaces::msg::ValveServos>("/oberon/fueling/valves", 3);
+    valveServosPublisher = this->create_publisher<gs_interfaces::msg::TankingActuators>("/oberon/fueling/valves", 3);
     temperatureZaworyPublisher = this->create_publisher<gs_interfaces::msg::Temperature>("/oberon/fueling/temperature", 3);
     pressureZaworyPublisher = this->create_publisher<gs_interfaces::msg::Pressure>("/oberon/fueling/pressure", 3);
     uartStatsZaworyPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/fueling/uart_stats", 3);
     remoteUartStatsZaworyPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/oberon/fueling/remote_uart_stats", 3);
 
-    tankingControlSubscription = this->create_subscription<gs_interfaces::msg::TankingControl>("/oberon/fueling/control", 3, std::bind(&Oberon::fuelingControlCallback, this, std::placeholders::_1));
+    tankingControlSubscription = this->create_subscription<gs_interfaces::msg::TankingCommands>("/oberon/fueling/control", 3, std::bind(&Launchbox::fuelingControlCallback, this, std::placeholders::_1));
 
-    oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Oberon::oneSecondTimerCallback, this));
+    oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Launchbox::oneSecondTimerCallback, this));
 
-    // powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Oberon::powerMonitorCallback, this));
+    // powerMonitor = std::make_unique<PowerMonitor>(std::bind(&Launchbox::powerMonitorCallback, this));
     // RPI - always /dev/ttyS0  
-    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyS4", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this), std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS4");
+    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyS4", std::bind(&Launchbox::arduinoWyrzutniaTensoCallback, this), std::bind(&Launchbox::arduinoWyrzutniaTemperatureCallback, this), "/dev/ttyS4");
     // ubuntu - /dev/ttyUSB0 / /dev/ttyUSB1 ...
-    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Oberon::arduinoWyrzutniaTensoCallback, this),
-    //                                                                       std::bind(&Oberon::arduinoWyrzutniaTemperatureCallback, this),
-    //                                                                       std::bind(&Oberon::publishArduinoWyrzutniaRemoteUartStats, this));
-    // arduinoZawory = std::make_unique<ArduinoZawory>("/dev/ttyUSB0", std::bind(&Oberon::publishArduinoZaworyZaworyPos, this),
-    //                                                                 std::bind(&Oberon::publishArduinoZaworyTemperature, this),
-    //                                                                 std::bind(&Oberon::publishArduinoZaworyPressure, this),
-    //                                                                 std::bind(&Oberon::publishArduinoZaworyRemoteUartStats, this));
-    createLiveConfigIfDoesNotExist();
+    // arduinoWyrzutnia = std::make_unique<ArduinoWyrzutnia>("/dev/ttyUSB0", std::bind(&Launchbox::arduinoWyrzutniaTensoCallback, this),
+    //                                                                       std::bind(&Launchbox::arduinoWyrzutniaTemperatureCallback, this),
+    //                                                                       std::bind(&Launchbox::publishArduinoWyrzutniaRemoteUartStats, this));
+    // arduinoZawory = std::make_unique<ArduinoZawory>("/dev/ttyUSB0", std::bind(&Launchbox::publishArduinoZaworyZaworyPos, this),
+    //                                                                 std::bind(&Launchbox::publishArduinoZaworyTemperature, this),
+    //                                                                 std::bind(&Launchbox::publishArduinoZaworyPressure, this),
+    //                                                                 std::bind(&Launchbox::publishArduinoZaworyRemoteUartStats, this));
+    
+    // createLiveConfigIfDoesNotExist();
     // loadLiveConfig();
 }
 
-Oberon::~Oberon()
+Launchbox::~Launchbox()
 {
 }
 
-void Oberon::powerMonitorCallback()
+void Launchbox::powerMonitorCallback()
 {
     gs_interfaces::msg::Power msg;
     msg.header.stamp = this->now();
@@ -56,13 +57,13 @@ void Oberon::powerMonitorCallback()
     powerMonitorPublisher->publish(msg);
 }
 
-void Oberon::oneSecondTimerCallback()
+void Launchbox::oneSecondTimerCallback()
 {
     publishUartStats();
     publishLoadCellsParams();
 }
 
-void Oberon::arduinoWyrzutniaTensoCallback()
+void Launchbox::arduinoWyrzutniaTensoCallback()
 {
     gs_interfaces::msg::LoadCells msg;
     msg.header.stamp = this->now();
@@ -87,7 +88,7 @@ void Oberon::arduinoWyrzutniaTensoCallback()
     loadCellsLaunchPadPublisher->publish(msg);
 }
 
-void Oberon::arduinoWyrzutniaTemperatureCallback()
+void Launchbox::arduinoWyrzutniaTemperatureCallback()
 {
     gs_interfaces::msg::Temperature msg;
     msg.header.stamp = this->now();
@@ -96,7 +97,7 @@ void Oberon::arduinoWyrzutniaTemperatureCallback()
     temperatureLaunchPadPublisher->publish(msg);
 }
 
-void Oberon::publishUartStats()
+void Launchbox::publishUartStats()
 {
     // gs_interfaces::msg::UartStatistics msg;
     // msg.header.stamp = this->now();
@@ -137,7 +138,7 @@ void Oberon::publishUartStats()
     // uartStatsZaworyPub->publish(msgZawory);
 }
 
-void Oberon::publishArduinoWyrzutniaRemoteUartStats()
+void Launchbox::publishArduinoWyrzutniaRemoteUartStats()
 {
     gs_interfaces::msg::UartStatistics msg;
     msg.header.stamp = this->now();
@@ -159,7 +160,7 @@ void Oberon::publishArduinoWyrzutniaRemoteUartStats()
     remoteUartStatsPub->publish(msg);
 }
 
-void Oberon::publishLoadCellsParams()
+void Launchbox::publishLoadCellsParams()
 {
     // gs_interfaces::msg::LoadCellsParams msg;
     // msg.header.stamp = this->now();
@@ -176,7 +177,7 @@ void Oberon::publishLoadCellsParams()
     // loadCellsParamsPublisher->publish(msg);
 }
 
-void Oberon::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg)
+void Launchbox::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg)
 {
     RCLCPP_INFO(this->get_logger(), "Wyrzutnia tare msg from %s", msg->header.frame_id.c_str());
     if (msg->tare_rocket_point)
@@ -193,7 +194,7 @@ void Oberon::arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTar
     publishLoadCellsParams();
 }
 
-void Oberon::createLiveConfigIfDoesNotExist()
+void Launchbox::createLiveConfigIfDoesNotExist()
 {
     std::string filename = "." + std::string(this->get_fully_qualified_name()) + ".live.cfg";
     std::fstream file(filename, std::ios::in);
@@ -204,7 +205,7 @@ void Oberon::createLiveConfigIfDoesNotExist()
     }
 }
 
-void Oberon::loadLiveConfig()
+void Launchbox::loadLiveConfig()
 {
     std::string filename = "." + std::string(this->get_fully_qualified_name()) + ".live.cfg";
     std::fstream file(filename, std::ios::in);
@@ -228,7 +229,7 @@ void Oberon::loadLiveConfig()
     file.close();
 }
 
-void Oberon::saveLiveConfig()
+void Launchbox::saveLiveConfig()
 {
     std::string filename = "." + std::string(this->get_fully_qualified_name()) + ".live.cfg";
     std::fstream file(filename, std::ios::out);
@@ -250,9 +251,9 @@ void Oberon::saveLiveConfig()
     file.close();
 }
 
-void Oberon::publishArduinoZaworyZaworyPos()
+void Launchbox::publishArduinoZaworyZaworyPos()
 {
-    gs_interfaces::msg::ValveServos msg;
+    gs_interfaces::msg::TankingActuators msg;
     msg.header.stamp = this->now();
     msg.header.frame_id = this->get_fully_qualified_name();
     auto pos = arduinoZawory->getZaworyPos();
@@ -261,7 +262,7 @@ void Oberon::publishArduinoZaworyZaworyPos()
     valveServosPublisher->publish(msg);
 }
 
-void Oberon::publishArduinoZaworyTemperature()
+void Launchbox::publishArduinoZaworyTemperature()
 {
     gs_interfaces::msg::Temperature msg;
     msg.header.stamp = this->now();
@@ -270,7 +271,7 @@ void Oberon::publishArduinoZaworyTemperature()
     temperatureZaworyPublisher->publish(msg);   
 }
 
-void Oberon::publishArduinoZaworyPressure()
+void Launchbox::publishArduinoZaworyPressure()
 {
     gs_interfaces::msg::Pressure msg;
     msg.header.stamp = this->now();
@@ -279,7 +280,7 @@ void Oberon::publishArduinoZaworyPressure()
     pressureZaworyPublisher->publish(msg);
 }
 
-void Oberon::publishArduinoZaworyRemoteUartStats()
+void Launchbox::publishArduinoZaworyRemoteUartStats()
 {
     gs_interfaces::msg::UartStatistics msg;
     msg.header.stamp = this->now();
@@ -301,7 +302,7 @@ void Oberon::publishArduinoZaworyRemoteUartStats()
     remoteUartStatsZaworyPub->publish(msg);
 }
 
-void Oberon::fuelingControlCallback(const gs_interfaces::msg::TankingControl::SharedPtr msg)
+void Launchbox::fuelingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg)
 {
     RCLCPP_INFO(this->get_logger(), "Fueling control msg from %s  %d  %d  %d", msg->header.frame_id.c_str(), msg->valve_feed, msg->valve_vent, msg->decouple);
     if (arduinoZawory)

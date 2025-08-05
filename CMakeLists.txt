@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(oberon)
+project(gs_launchpad)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -7,25 +7,48 @@ endif()
 
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(gs_interfaces 0.4.0 REQUIRED)
 
-include_directories(include/oberon)
+add_subdirectory(gs_interfaces)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/gs_interfaces)
 
-set(SOURCES
-  src/main_oberon.cpp
-  include/oberon/Oberon.cpp
-  include/oberon/ArduinoWyrzutnia.cpp
-  include/oberon/ArduinoZawory.cpp
-  include/oberon/PowerMonitor.cpp
-  include/oberon/GSUART.cpp
+include_directories(include/launchpad)
+
+# set(SOURCES_LAUNCHBOX
+#   src/main_launchpad.cpp
+#   include/launchpad/Launchbox.cpp
+#   include/launchpad/ArduinoWyrzutnia.cpp
+#   include/launchpad/ArduinoZawory.cpp
+#   include/launchpad/PowerMonitor.cpp
+#   include/launchpad/GSUART.cpp
+# )
+
+set(SOURCES_TANKING
+  src/main_tanking.cpp
+  include/launchpad/Tanking.cpp
+  include/launchpad/PowerMonitor.cpp
+  include/launchpad/GSUART.cpp
 )
 
-add_executable(oberon ${SOURCES})
-ament_target_dependencies(oberon rclcpp gs_interfaces)
-# i2c
-target_link_libraries(oberon i2c)
+# add_executable(gs_launchbox ${SOURCES_LAUNCHBOX})
+add_executable(gs_tanking ${SOURCES_TANKING})
 
-install(TARGETS oberon
+# ament_target_dependencies(gs_launchbox rclcpp)
+ament_target_dependencies(gs_tanking rclcpp)
+
+# target_link_libraries(gs_launchbox i2c 
+#   gs_interfaces__rosidl_typesupport_cpp
+#   gs_interfaces__rosidl_typesupport_fastrtps_cpp
+#   gs_interfaces__rosidl_generator_cpp)
+
+target_link_libraries(gs_tanking i2c 
+  gs_interfaces__rosidl_typesupport_cpp
+  gs_interfaces__rosidl_typesupport_fastrtps_cpp
+  gs_interfaces__rosidl_generator_cpp)
+
+# install(TARGETS gs_launchbox
+#   DESTINATION lib/${PROJECT_NAME})
+
+install(TARGETS gs_tanking 
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

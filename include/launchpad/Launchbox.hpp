@@ -10,7 +10,7 @@
 #include "gs_interfaces/msg/temperature.hpp"
 #include "gs_interfaces/msg/uart_statistics.hpp"
 #include "gs_interfaces/msg/power.hpp"
-#include "gs_interfaces/msg/valve_servos.hpp"
+#include "gs_interfaces/msg/tanking_actuators.hpp"
 #include "gs_interfaces/msg/pressure.hpp"
 #include "gs_interfaces/msg/tanking_control.hpp"
 
@@ -18,11 +18,11 @@
 #include "ArduinoZawory.hpp"
 #include "PowerMonitor.hpp"
 
-class Oberon : public rclcpp::Node
+class Launchbox : public rclcpp::Node
 {
 public:
-    Oberon();
-    ~Oberon();
+    Launchbox();
+    ~Launchbox();
 private:
     rclcpp::Publisher<gs_interfaces::msg::LoadCells>::SharedPtr loadCellsLaunchPadPublisher;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr uartStatsPub;
@@ -32,16 +32,16 @@ private:
     rclcpp::Publisher<gs_interfaces::msg::Power>::SharedPtr powerMonitorPublisher;
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureZaworyPublisher;
     rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureZaworyPublisher;
-    rclcpp::Publisher<gs_interfaces::msg::ValveServos>::SharedPtr valveServosPublisher;
+    rclcpp::Publisher<gs_interfaces::msg::TankingActuators>::SharedPtr valveServosPublisher;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr uartStatsZaworyPub;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr remoteUartStatsZaworyPub;
     rclcpp::Subscription<gs_interfaces::msg::LoadCellsTare>::SharedPtr loadCellsLaunchPadTareSubscription;
-    rclcpp::Subscription<gs_interfaces::msg::TankingControl>::SharedPtr tankingControlSubscription;
+    rclcpp::Subscription<gs_interfaces::msg::TankingCommands>::SharedPtr tankingControlSubscription;
     
     void arduinoWyrzutniaTareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg);
 
     std::unique_ptr<ArduinoWyrzutnia> arduinoWyrzutnia;
-    std::unique_ptr<ArduinoZawory> arduinoZawory;
+    // std::unique_ptr<ArduinoZawory> arduinoZawory;
     std::unique_ptr<PowerMonitor> powerMonitor;
 
     void powerMonitorCallback();
@@ -60,7 +60,7 @@ private:
     void publishArduinoZaworyZaworyPos();
     void publishArduinoZaworyTemperature();
     void publishArduinoZaworyPressure();
-    void fuelingControlCallback(const gs_interfaces::msg::TankingControl::SharedPtr msg);
+    void fuelingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg);
 
     void createLiveConfigIfDoesNotExist();
     void loadLiveConfig();
