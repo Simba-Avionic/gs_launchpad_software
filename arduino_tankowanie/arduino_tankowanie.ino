@@ -10,7 +10,7 @@
 // #define GSUART_PLATFORM_RPI_UBUNTU  0
 // #define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
 #include "GSUART.hpp"
-GSUART::Messenger messenger(&Serial);
+GSUART::messanger messanger(&Serial);
 GSUART::MsgPowerTanking msgPower;
 GSUART::MsgZaworyPozycja msgValves;
 
@@ -27,10 +27,10 @@ DFRobot_INA219_IIC czujnik_pradu_7v(&Wire, INA219_I2C_ADDRESS4);
 DFRobot_INA219_IIC czujnik_pradu_12v(&Wire, INA219_I2C_ADDRESS1);
 
 #define INTERVAL_CHECK_COMMANDS_INPUT 10
-#define INTERVAL_SEND_VALVES_POSITION 1000
-#define INTERVAL_CHECK_VALVES_POSITION 200
-#define INTERVAL_SEND_POWER_SENSORS 1000
-#define INTERVAL_CHECK_POWER_SENSORS 200
+#define INTERVAL_SEND_VALVES_POSITION 700
+#define INTERVAL_CHECK_VALVES_POSITION 100
+#define INTERVAL_SEND_POWER_SENSORS 500
+#define INTERVAL_CHECK_POWER_SENSORS 100
 #define INTERVAL_SEND_UART_STATS 4000
 #define INTERVAL_CHECK_BUTTONS 100
 #define DELAY_MAIN_LOOP 1
@@ -207,49 +207,58 @@ void check_buttons()
   static bool button_feeds_last_pressed = false;
 
   bool anything_pressed = false;
+  bool send_valves = false;
 
   if (digitalRead(PIN_BUTTON_DECOUPLERS) == LOW) {
     anything_pressed = true;
-    // Serial.println("Otworzyc decouplery");
-    button_decouplers_last_pressed = true;
+    
     decoupler_oxidizer->open();
     decoupler_pressurizer->open();
+
+    if (!button_decouplers_last_pressed) send_valves = true;
+    button_decouplers_last_pressed = true;
   }
   else if (button_decouplers_last_pressed) {
-    // Serial.println("Zamknac decouplery");
     button_decouplers_last_pressed = false;
     decoupler_oxidizer->close();
     decoupler_pressurizer->close();
+    send_valves = true;
   }
 
   if (digitalRead(PIN_BUTTON_VENTS) == LOW) {
     anything_pressed = true;
-    // Serial.println("Otworzyc venty");
-    button_vents_last_pressed = true;
+
     valve_vent_oxidizer->open();
     valve_vent_pressurizer->open();
+
+    if (!button_vents_last_pressed) send_valves = true;
+    button_vents_last_pressed = true;
   }
   else if (button_vents_last_pressed) {
-    // Serial.println("Zamknac venty");
     button_vents_last_pressed = false;
     valve_vent_oxidizer->close();
     valve_vent_pressurizer->close();
+    send_valves = true;
   }
 
   if (digitalRead(PIN_BUTTON_FEEDS) == LOW) {
     anything_pressed = true;
-    // Serial.println("Otworzyc feedy");
-    button_feeds_last_pressed = true;
+    
     valve_feed_oxidizer->openWithExtraSteps();
     valve_feed_pressurizer->openWithExtraSteps();
+
+    if (!button_feeds_last_pressed) send_valves = true;
+    button_feeds_last_pressed = true;
   }
   else if (button_feeds_last_pressed) {
-    // Serial.println("Zamknac feedy");
     button_feeds_last_pressed = false;
     valve_feed_oxidizer->close();
     valve_feed_pressurizer->close();
+    send_valves = true;
   }
 
+  if (send_valves)
+    send_valves_position();
   if (anything_pressed)
     last_command_time = millis();
 }
@@ -263,7 +272,7 @@ void send_valves_position()
   msgValves.valve_vent_pressurizer = valve_vent_pressurizer->isOpen();
   msgValves.decoupler_oxidizer = decoupler_oxidizer->isOpen();
   msgValves.decoupler_pressurizer = decoupler_pressurizer->isOpen();
-  messenger.send(msgValves);
+  messanger.send(msgValves);
 }
 
 void send_power_sensors()
@@ -273,13 +282,13 @@ void send_power_sensors()
   msgPower.v7_4.mA = czujnik_pradu_7v.getCurrent_mA();
   msgPower.v12.V = czujnik_pradu_12v.getBusVoltage_V();
   msgPower.v12.mA = czujnik_pradu_12v.getCurrent_mA();
-  messenger.send(msgPower);
+  messanger.send(msgPower);
 }
 
 void send_uart_stats()
 {
   time_last_sent_uart_stats = millis();
-  messenger.sendUartStats();
+  messanger.sendUartStats();
 }
 
 void printPosition(int pos1, int pos2)
