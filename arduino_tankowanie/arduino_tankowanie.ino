@@ -6,10 +6,13 @@
 #include "Servo.h"
 #include "ServoValve.hpp"
 
-// #define GSUART_PLATFORM_ARDUINO     0
-// #define GSUART_PLATFORM_RPI_UBUNTU  1
+// #define GSUART_PLATFORM_ARDUINO     1
+// #define GSUART_PLATFORM_RPI_UBUNTU  0
 // #define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
-// #include "../include/launchpad/GSUART.hpp"
+#include "GSUART.hpp"
+GSUART::Messenger messenger(&Serial);
+GSUART::MsgPowerTanking msgPower;
+GSUART::MsgZaworyPozycja msgValves;
 
 ServoValve* valve_feed_oxidizer;
 ServoValve* valve_feed_pressurizer;
@@ -91,18 +94,18 @@ void setup() {
   valve_vent_pressurizer->close();
 
   while(czujnik_pradu_7v.begin() != true) {
-    Serial.println("czujnik_pradu_7v begin failed");
+    // Serial.println("czujnik_pradu_7v begin failed");
     // tutaj wyslij blad zalaczenia czujnika
     delay(1000);
   }
-  Serial.println("czujnik_pradu_7v begin OK");
+  // Serial.println("czujnik_pradu_7v begin OK");
 
   while(czujnik_pradu_12v.begin() != true) {
-    Serial.println("czujnik_pradu_12v begin failed");
+    // Serial.println("czujnik_pradu_12v begin failed");
     // tutaj wyslij blad zalaczenia czujnika
     delay(1000);
   }
-  Serial.println("czujnik_pradu_12v begin OK");
+  // Serial.println("czujnik_pradu_12v begin OK");
 
   goToSafeState();
   digitalWrite(PIN_DIODE, HIGH);
@@ -254,20 +257,29 @@ void check_buttons()
 void send_valves_position()
 {
   time_last_sent_valves_position = millis();
-  auto pos1 = valve_feed_oxidizer->position();
-  auto pos2 = valve_feed_pressurizer->position();
-  printPosition(pos1, pos2);
+  msgValves.valve_feed_oxidizer = valve_feed_oxidizer->position();
+  msgValves.valve_feed_pressurizer = valve_feed_pressurizer->position();
+  msgValves.valve_vent_oxidizer = valve_vent_oxidizer->isOpen();
+  msgValves.valve_vent_pressurizer = valve_vent_pressurizer->isOpen();
+  msgValves.decoupler_oxidizer = decoupler_oxidizer->isOpen();
+  msgValves.decoupler_pressurizer = decoupler_pressurizer->isOpen();
+  messenger.send(msgValves);
 }
 
 void send_power_sensors()
 {
   time_last_sent_power_sensors = millis();
-  printPower();
+  msgPower.v7_4.V = czujnik_pradu_7v.getBusVoltage_V();
+  msgPower.v7_4.mA = czujnik_pradu_7v.getCurrent_mA();
+  msgPower.v12.V = czujnik_pradu_12v.getBusVoltage_V();
+  msgPower.v12.mA = czujnik_pradu_12v.getCurrent_mA();
+  messenger.send(msgPower);
 }
 
 void send_uart_stats()
 {
   time_last_sent_uart_stats = millis();
+  messenger.sendUartStats();
 }
 
 void printPosition(int pos1, int pos2)
@@ -283,13 +295,13 @@ void printPower()
     // Serial.print("V ");
     // Serial.print(czujnik_pradu_1.getShuntVoltage_mV(), 3);
     // Serial.print("mV ");
-    Serial.print(czujnik_pradu_7v.getCurrent_mA(), 1);
-    Serial.print("mA ");
-    Serial.print(czujnik_pradu_12v.getCurrent_mA(), 1);
-    Serial.print("mA ");
+    // Serial.print(czujnik_pradu_7v.getCurrent_mA(), 1);
+    // Serial.print("mA ");
+    // Serial.print(czujnik_pradu_12v.getCurrent_mA(), 1);
+    // Serial.print("mA ");
     // Serial.print(czujnik_pradu_1.getPower_mW(), 1);
     // Serial.print("mW ");
-    Serial.println("");
+    // Serial.println("");
 }
 
 void goToSafeState()

@@ -223,6 +223,8 @@ namespace GSUART
         struct PowerSensor {
             float V;
             float mA;
+
+            static constexpr size_t _STRUCT_SIZE = 2 * sizeof(float);
         } v7_4, v12;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
