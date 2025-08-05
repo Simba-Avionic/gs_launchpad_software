@@ -10,7 +10,7 @@
 // #define GSUART_PLATFORM_RPI_UBUNTU  0
 // #define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
 #include "GSUART.hpp"
-GSUART::messanger messanger(&Serial);
+GSUART::Messenger messenger(&Serial);
 GSUART::MsgPowerTanking msgPower;
 GSUART::MsgZaworyPozycja msgValves;
 
@@ -35,7 +35,7 @@ DFRobot_INA219_IIC czujnik_pradu_12v(&Wire, INA219_I2C_ADDRESS1);
 #define INTERVAL_CHECK_BUTTONS 100
 #define DELAY_MAIN_LOOP 1
 
-#define THRESHOLD_VALVE_POS_CHANGE_SEND 7
+#define THRESHOLD_VALVE_POS_CHANGE_SEND 4
 #define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND 85
 #define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms 3000
 
@@ -64,9 +64,6 @@ void send_power_sensors();
 void send_uart_stats();
 
 void goToSafeState();
-
-void printPower();
-void printPosition(int pos1, int pos2);
 
 void setup() {
   pinMode(PIN_DIODE, OUTPUT);
@@ -140,30 +137,37 @@ void loop() {
 
 void check_commands_input()
 {
-  static bool first = true;
-
   time_last_check_commands_input = millis();
-  if(Serial.available() > 0)
+  
+  auto msg = messenger.receive();
+
+  if (msg == nullptr) return;
+
+  switch (msg->getID())
   {
-    int byte = Serial.read();
-    if(byte == -1) return;
-    if(byte == 10) return;
-
-    byte -= '0';
-    int pos_servo = byte*20;
-    if (first)
-      valve_feed_oxidizer->setPosition(pos_servo);
-    else
-      valve_feed_pressurizer->setPosition(pos_servo);
-
-    first = !first;
-
-    last_command_time = millis();
+    case GSUART::MsgID::ZAWORY_STEROWANIE:
+    {
+      const GSUART::MsgZaworySterowanie* msgZaworySterowanie = static_cast<const GSUART::MsgZaworySterowanie*>(msg);
+      msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->openWithExtraSteps()     : valve_feed_oxidizer->close();
+      msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->openWithExtraSteps()  : valve_feed_pressurizer->close();
+      msgZaworySterowanie->valve_vent_oxidizer      ? valve_vent_oxidizer->open()                   : valve_vent_oxidizer->close();
+      msgZaworySterowanie->valve_vent_pressurizer   ? valve_vent_pressurizer->open()                : valve_vent_pressurizer->close();
+      msgZaworySterowanie->decoupler_oxidizer       ? decoupler_oxidizer->open()                    : decoupler_oxidizer->close();
+      msgZaworySterowanie->decoupler_pressurizer    ? decoupler_pressurizer->open()                 : decoupler_pressurizer->close();
+      send_valves_position();
+      last_command_time = millis();
+      break;
+    }
+    default:
+    // unknown message type
+    break;
   }
 
+  
   // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
   if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
   {
+    last_command_time = millis();
     goToSafeState();
   }
 }
@@ -272,7 +276,7 @@ void send_valves_position()
   msgValves.valve_vent_pressurizer = valve_vent_pressurizer->isOpen();
   msgValves.decoupler_oxidizer = decoupler_oxidizer->isOpen();
   msgValves.decoupler_pressurizer = decoupler_pressurizer->isOpen();
-  messanger.send(msgValves);
+  messenger.send(msgValves);
 }
 
 void send_power_sensors()
@@ -282,41 +286,21 @@ void send_power_sensors()
   msgPower.v7_4.mA = czujnik_pradu_7v.getCurrent_mA();
   msgPower.v12.V = czujnik_pradu_12v.getBusVoltage_V();
   msgPower.v12.mA = czujnik_pradu_12v.getCurrent_mA();
-  messanger.send(msgPower);
+  messenger.send(msgPower);
 }
 
 void send_uart_stats()
 {
   time_last_sent_uart_stats = millis();
-  messanger.sendUartStats();
-}
-
-void printPosition(int pos1, int pos2)
-{
-  // Serial.print(pos1);
-  // Serial.print(" ");
-  // Serial.println(pos2);
-}
-
-void printPower()
-{
-    // Serial.print(czujnik_pradu_1.getBusVoltage_V(), 2);
-    // Serial.print("V ");
-    // Serial.print(czujnik_pradu_1.getShuntVoltage_mV(), 3);
-    // Serial.print("mV ");
-    // Serial.print(czujnik_pradu_7v.getCurrent_mA(), 1);
-    // Serial.print("mA ");
-    // Serial.print(czujnik_pradu_12v.getCurrent_mA(), 1);
-    // Serial.print("mA ");
-    // Serial.print(czujnik_pradu_1.getPower_mW(), 1);
-    // Serial.print("mW ");
-    // Serial.println("");
+  messenger.sendUartStats();
 }
 
 void goToSafeState()
 {
-  valve_feed_oxidizer->setPosition(160);
-  valve_feed_pressurizer->setPosition(160);
-  // tutaj także zawory ventów
-  // tutaj nie decoupler chyba
+  valve_feed_oxidizer->close();
+  valve_feed_pressurizer->close();
+  valve_vent_oxidizer->close();
+  valve_vent_pressurizer->close();
+  decoupler_oxidizer->close();
+  decoupler_pressurizer->close();
 }

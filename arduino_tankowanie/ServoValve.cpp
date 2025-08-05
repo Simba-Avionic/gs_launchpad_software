@@ -14,7 +14,7 @@ ServoValve::ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentio
 int ServoValve::readPosition()
 {
   position_last = position_current;
-  position_current = analogRead(potentiometer_pin) / 10;
+  position_current = analogRead(potentiometer_pin) / 10;  // 0-1024  -> 0-102
   return position_current;
 }
 
