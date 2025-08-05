@@ -324,30 +324,52 @@ void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(int8_t) * 2 + sizeof(bool);
-  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
-  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
-  memcpy(bytes_out + sizeof(int8_t) * 2, &decouple, sizeof(bool));
+  *size_out = sizeof(uint8_t);
+  uint8_t bools = 0;
+  bools |= (valve_feed_oxidizer ? 1 : 0) << 0;
+  bools |= (valve_feed_pressurizer ? 1 : 0) << 1;
+  bools |= (valve_vent_oxidizer ? 1 : 0) << 2;
+  bools |= (valve_vent_pressurizer ? 1 : 0) << 3;
+  bools |= (decoupler_oxidizer ? 1 : 0) << 4;
+  bools |= (decoupler_pressurizer ? 1 : 0) << 5;
+  memcpy(bytes_out, &bools, sizeof(uint8_t));
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
-  memcpy(&valve_vent, bytes_in, size_in);
-  memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
-  memcpy(&decouple, bytes_in + sizeof(int8_t) * 2, size_in);
+  if (bytes_in == nullptr || size_in < sizeof(uint8_t)) return;
+  uint8_t bools;
+  memcpy(&bools, bytes_in, sizeof(uint8_t));
+  valve_feed_oxidizer = (bools & (1 << 0)) != 0;
+  valve_feed_pressurizer = (bools & (1 << 1)) != 0;
+  valve_vent_oxidizer = (bools & (1 << 2)) != 0;
+  valve_vent_pressurizer = (bools & (1 << 3)) != 0;
+  decoupler_oxidizer = (bools & (1 << 4)) != 0;
+  decoupler_pressurizer = (bools & (1 << 5)) != 0;
 }
 
 void MsgZaworyPozycja::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(int8_t) * 2;
-  memcpy(bytes_out, &valve_vent, sizeof(int8_t));
-  memcpy(bytes_out + sizeof(int8_t), &valve_feed, sizeof(int8_t));
+  uint8_t bools = 0;
+  bools |= (valve_vent_oxidizer ? 1 : 0) << 0;
+  bools |= (valve_vent_pressurizer ? 1 : 0) << 1;
+  bools |= (decoupler_oxidizer ? 1 : 0) << 2;
+  bools |= (decoupler_pressurizer ? 1 : 0) << 3;
+  memcpy(bytes_out, &valve_feed_oxidizer, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t), &valve_feed_pressurizer, sizeof(int8_t));
+  memcpy(bytes_out + sizeof(int8_t) * 2, &bools, sizeof(uint8_t));
+  *size_out = sizeof(int8_t) * 2 + sizeof(uint8_t);
 }
 
 void MsgZaworyPozycja::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2) return;
-  memcpy(&valve_vent, bytes_in, size_in);
-  memcpy(&valve_feed, bytes_in + sizeof(int8_t), size_in);
+  if (bytes_in == nullptr || size_in < sizeof(int8_t) * 2 + sizeof(uint8_t)) return;
+  memcpy(&valve_feed_oxidizer, bytes_in, sizeof(int8_t));
+  memcpy(&valve_feed_pressurizer, bytes_in + sizeof(int8_t), sizeof(int8_t));
+  uint8_t bools;
+  memcpy(&bools, bytes_in + sizeof(int8_t) * 2, sizeof(uint8_t));
+  valve_vent_oxidizer = (bools & (1 << 0)) != 0;
+  valve_vent_pressurizer = (bools & (1 << 1)) != 0;
+  decoupler_oxidizer = (bools & (1 << 2)) != 0;
+  decoupler_pressurizer = (bools & (1 << 3)) != 0;  
 }
 
 void MsgPressure::serialize(Byte* bytes_out, size_t* size_out) const {
@@ -370,6 +392,19 @@ void MsgUartStats::serialize(Byte* bytes_out, size_t* size_out) const {
 void MsgUartStats::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < UARTStatistics::Stats::_STRUCT_SIZE) return;
   memcpy(&stats, bytes_in, size_in);
+}
+
+void MsgPowerTanking::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(PowerSensor) * 2;
+  memcpy(bytes_out, &v7_4, sizeof(PowerSensor));
+  memcpy(bytes_out + sizeof(PowerSensor), &v12, sizeof(PowerSensor));
+}
+
+void MsgPowerTanking::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(PowerSensor) * 2) return;
+  memcpy(&v7_4, bytes_in, sizeof(PowerSensor));
+  memcpy(&v12, bytes_in + sizeof(PowerSensor), sizeof(PowerSensor));
 }
 
 void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx) {

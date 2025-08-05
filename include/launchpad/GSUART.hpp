@@ -1,10 +1,10 @@
 // #define GSUART_PLATFORM 0      //    0 - arduino - GSUART_PLATFORM_ARDUINO
                                 //    1 - rpi ubuntu - GSUART_PLATFORM_RPI_UBUNTU
-#define GSUART_PLATFORM_ARDUINO     0
-#define GSUART_PLATFORM_RPI_UBUNTU  1
-#ifndef GSUART_PLATFORM
-#define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
-#endif
+// #define GSUART_PLATFORM_ARDUINO     0
+// #define GSUART_PLATFORM_RPI_UBUNTU  1
+// #ifndef GSUART_PLATFORM
+// #define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
+// #endif
 #pragma once
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
@@ -47,7 +47,8 @@ namespace GSUART
         ZAWORY_STEROWANIE = 0x03,
         ZAWORY_POZYCJA = 0x04,
         PRESSURE = 0x05,
-        UART_STATS = 0x06
+        UART_STATS = 0x06,
+        POWER_TANKING = 0x07
     };
 
 
@@ -169,9 +170,12 @@ namespace GSUART
     {
     public:
         MsgZaworySterowanie() : Message(MsgID::ZAWORY_STEROWANIE) {}
-        int8_t valve_vent = 0;
-        int8_t valve_feed = 0;
-        bool decouple = false;
+        bool valve_feed_oxidizer = false;
+        bool valve_feed_pressurizer = false;
+        bool valve_vent_oxidizer = false;
+        bool valve_vent_pressurizer = false;
+        bool decoupler_oxidizer = false;
+        bool decoupler_pressurizer = false;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
@@ -181,8 +185,12 @@ namespace GSUART
     {
     public:
         MsgZaworyPozycja() : Message(MsgID::ZAWORY_POZYCJA) {}
-        int8_t valve_vent = 0;
-        int8_t valve_feed = 0;
+        int8_t valve_feed_oxidizer = 0;
+        int8_t valve_feed_pressurizer = 0;
+        bool valve_vent_oxidizer = false;
+        bool valve_vent_pressurizer = false;
+        bool decoupler_oxidizer = false;
+        bool decoupler_pressurizer = false;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
@@ -203,6 +211,19 @@ namespace GSUART
     public:
         MsgUartStats() : Message(MsgID::UART_STATS) {}
         UARTStatistics::Stats stats;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgPowerTanking : public Message
+    {
+    public:
+        MsgPowerTanking() : Message(MsgID::POWER_TANKING) {}
+        struct PowerSensor {
+            float V;
+            float mA;
+        } v7_4, v12;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
