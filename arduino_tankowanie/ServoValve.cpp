@@ -80,21 +80,21 @@ void Decoupler::open()
 {
   digitalWrite(pin_1, HIGH);
   digitalWrite(pin_2, LOW);
-  Serial.println("Open decoupler!");
+  // Serial.println("Open decoupler!");
 }
 
 void Decoupler::close()
 {
   digitalWrite(pin_1, LOW);
   digitalWrite(pin_2, HIGH);
-  Serial.println("Close decoupler!");
+  // Serial.println("Close decoupler!");
 }
 
 void Decoupler::dontMove()
 {
   digitalWrite(pin_1, HIGH);
   digitalWrite(pin_2, HIGH);
-  Serial.println("Stop decoupler!");
+  // Serial.println("Stop decoupler!");
 }
 
 
