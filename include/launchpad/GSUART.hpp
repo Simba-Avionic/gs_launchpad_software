@@ -48,7 +48,9 @@ namespace GSUART
         ZAWORY_POZYCJA = 0x04,
         PRESSURE = 0x05,
         UART_STATS = 0x06,
-        POWER_TANKING = 0x07
+        POWER_TANKING = 0x07,
+        
+        ABORT = 0xDD
     };
 
 
@@ -221,11 +223,21 @@ namespace GSUART
     public:
         MsgPowerTanking() : Message(MsgID::POWER_TANKING) {}
         struct PowerSensor {
-            float V;
-            float mA;
+            float V = 0.0f;
+            float mA = 0.0f;
 
             static constexpr size_t _STRUCT_SIZE = 2 * sizeof(float);
         } v7_4, v12;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgAbort : public Message
+    {
+    public:
+        MsgAbort() : Message(MsgID::ABORT) {}
+        bool abort = false;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;

@@ -423,6 +423,17 @@ void MsgPowerTanking::deserialize(const Byte* bytes_in, const size_t size_in) {
   memcpy(&v12, bytes_in + SIZE, SIZE);
 }
 
+void MsgAbort::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(bool);
+  memcpy(bytes_out, &abort , sizeof(bool));
+}
+
+void MsgAbort::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(bool)) return;
+  memcpy(&abort, bytes_in, sizeof(bool));
+}
+
 void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx) {
   if (byte == RAMKA_STOP || byte == RAMKA_START || byte == RAMKA_SPECIAL) {
     bytes[idx++] = RAMKA_SPECIAL;

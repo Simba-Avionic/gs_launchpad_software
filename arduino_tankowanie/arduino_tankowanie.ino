@@ -39,6 +39,8 @@ DFRobot_INA219_IIC czujnik_pradu_12v(&Wire, INA219_I2C_ADDRESS1);
 #define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND 85
 #define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms 3000
 
+#define TIMEOUT_ABORT_ms 30000 // 30s
+
 #define PIN_BUTTON_DECOUPLERS 10
 #define PIN_BUTTON_VENTS 8
 #define PIN_BUTTON_FEEDS 7
@@ -64,6 +66,7 @@ void send_power_sensors();
 void send_uart_stats();
 
 void goToSafeState();
+void abort();
 
 void setup() {
   pinMode(PIN_DIODE, OUTPUT);
@@ -76,19 +79,13 @@ void setup() {
   while(!Serial);
 
   valve_feed_oxidizer = new ServoValve(9, 600, 2440, A0);
-  valve_feed_oxidizer->close();
   valve_feed_pressurizer = new ServoValve(6, 600, 2440, A1);
-  valve_feed_pressurizer->close();
 
   decoupler_oxidizer = new Decoupler(2, 3);
-  decoupler_oxidizer->close();
   decoupler_pressurizer = new Decoupler(4, 5);
-  decoupler_pressurizer->close();
 
   valve_vent_oxidizer = new ElectroValve(11);
-  valve_vent_oxidizer->close();
   valve_vent_pressurizer = new ElectroValve(12);
-  valve_vent_pressurizer->close();
 
   while(czujnik_pradu_7v.begin() != true) {
     // Serial.println("czujnik_pradu_7v begin failed");
@@ -139,6 +136,11 @@ void check_commands_input()
 {
   time_last_check_commands_input = millis();
 
+  static bool is_aborted = false;
+  static unsigned long last_abort_msg_time = 0;
+
+  if (is_aborted && ( millis() - last_abort_msg_time > TIMEOUT_ABORT_ms )) is_aborted = false;
+
   // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
   if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
   {
@@ -154,6 +156,7 @@ void check_commands_input()
   {
     case GSUART::MsgID::ZAWORY_STEROWANIE:
     {
+      if (is_aborted) break;
       const GSUART::MsgZaworySterowanie* msgZaworySterowanie = static_cast<const GSUART::MsgZaworySterowanie*>(msg);
       msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->openWithExtraSteps()     : valve_feed_oxidizer->close();
       msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->openWithExtraSteps()  : valve_feed_pressurizer->close();
@@ -163,6 +166,17 @@ void check_commands_input()
       msgZaworySterowanie->decoupler_pressurizer    ? decoupler_pressurizer->open()                 : decoupler_pressurizer->close();
       send_valves_position();
       last_command_time = millis();
+      break;
+    }
+    case GSUART::MsgID::ABORT:
+    {
+      const GSUART::MsgAbort* msgAbort = static_cast<const GSUART::MsgAbort*>(msg);
+      if (msgAbort->abort)
+      {
+        is_aborted = true;
+        last_abort_msg_time = millis();
+        abort();
+      }
       break;
     }
     default:
@@ -298,8 +312,22 @@ void goToSafeState()
 {
   valve_feed_oxidizer->close();
   valve_feed_pressurizer->close();
+
   valve_vent_oxidizer->close();
   valve_vent_pressurizer->close();
+
   decoupler_oxidizer->close();
   decoupler_pressurizer->close();
+}
+
+void abort()
+{
+  valve_feed_oxidizer->close();
+  valve_feed_pressurizer->close();
+
+  valve_vent_oxidizer->open();
+  valve_vent_pressurizer->open();
+
+  decoupler_oxidizer->open();
+  decoupler_pressurizer->open();
 }

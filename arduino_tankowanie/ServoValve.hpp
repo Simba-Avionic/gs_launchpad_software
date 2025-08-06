@@ -32,7 +32,7 @@ private:
   int potentiometer_pin;
   int position_last = 0, position_current = 0;
 
-  #define STEP_TIME 1000
+  #define STEP_TIME 500
   unsigned long last_step_open_time = 0;
   int open_idx = 0;
 
