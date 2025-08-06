@@ -138,6 +138,13 @@ void loop() {
 void check_commands_input()
 {
   time_last_check_commands_input = millis();
+
+  // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
+  if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
+  {
+    last_command_time = millis();
+    goToSafeState();
+  }
   
   auto msg = messenger.receive();
 
@@ -161,14 +168,6 @@ void check_commands_input()
     default:
     // unknown message type
     break;
-  }
-
-  
-  // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
-  if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
-  {
-    last_command_time = millis();
-    goToSafeState();
   }
 }
 
