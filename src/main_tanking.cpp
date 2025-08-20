@@ -18,7 +18,7 @@ int main(int argc, char ** argv)
 {
   signal(SIGINT, signalHandler);
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<Tanking>("/dev/ttyS0"));
+  rclcpp::spin(std::make_shared<Tanking>("/dev/ttyAMA1"));
   rclcpp::shutdown();
   return 0;
 }
