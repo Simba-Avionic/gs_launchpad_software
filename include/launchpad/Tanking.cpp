@@ -5,7 +5,6 @@ Tanking::Tanking(std::string serialPort) : Node("tanking"),
 {
     localUartStatsValvesPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/tanking/uart_stats", 3);
     remoteUartStatsValvesPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/tanking/remote_uart_stats", 3);
-    powerMonitorPub = this->create_publisher<gs_interfaces::msg::PowerTanking>("/tanking/power", 5);
     temperatureValvesPub = this->create_publisher<gs_interfaces::msg::Temperature>("/tanking/temperature", 3);
     pressureValvesPub = this->create_publisher<gs_interfaces::msg::Pressure>("/tanking/pressure", 3);
     tankingActuatorsPub = this->create_publisher<gs_interfaces::msg::TankingActuators>("/tanking/valves/servos", 3);
@@ -29,7 +28,7 @@ void Tanking::tankingControlCallback(const gs_interfaces::msg::TankingCommands::
 
 void Tanking::abortCallback(const gs_interfaces::msg::TankingAbort::SharedPtr msg)
 {
-    RCLCPP_WARN(this->get_logger(), "ABORT command received from %s", msg->header.frame_id.c_str());
+    RCLCPP_WARN(this->get_logger(), "ABORT command received from %s with value %d", msg->header.frame_id.c_str(), msg->abort);
     GSUART::MsgAbort abortMsg;
     abortMsg.abort = true;
     messenger.send(abortMsg);
@@ -73,13 +72,6 @@ void Tanking::readingLoop()
                 const GSUART::MsgUartStats* msgUARTStats = dynamic_cast<const GSUART::MsgUartStats*>(msg);
                 if (localUartStatsValvesPub)
                     publishRemoteUartStats(msgUARTStats);
-                break;
-            }
-            case GSUART::MsgID::POWER_TANKING:
-            {
-                const GSUART::MsgPowerTanking* msgPowerTanking = dynamic_cast<const GSUART::MsgPowerTanking*>(msg);
-                if (powerMonitorPub)
-                    publishPower(msgPowerTanking);
                 break;
             }
             default:
@@ -213,18 +205,4 @@ void Tanking::publishRemoteUartStats(const GSUART::MsgUartStats* msgUARTStats)
     msg.messages_overwritten = msgUARTStats->stats.messagesOverwritten;
     msg.buffor_overflows = msgUARTStats->stats.bufforOverflows;
     remoteUartStatsValvesPub->publish(msg);
-}
-
-void Tanking::publishPower(const GSUART::MsgPowerTanking* msgPowerTanking)
-{
-    gs_interfaces::msg::PowerTanking msg;
-    msg.header.stamp = this->now();
-    msg.header.frame_id = this->get_fully_qualified_name();
-
-    msg.v7_4.bus_voltage_v = msgPowerTanking->v7_4.V;
-    msg.v7_4.current_ma = msgPowerTanking->v7_4.mA;
-    msg.v12.bus_voltage_v = msgPowerTanking->v12.V;
-    msg.v12.current_ma = msgPowerTanking->v12.mA;
-
-    powerMonitorPub->publish(msg);
 }
