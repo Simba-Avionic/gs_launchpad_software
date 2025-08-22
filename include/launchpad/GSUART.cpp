@@ -207,6 +207,9 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::POWER_TANKING:
       receivedMsg = new MsgPowerTanking();
       break;
+    case MsgID::ABORT:
+      receivedMsg = new MsgAbort();
+      break;
     default:
       receivedMsg = nullptr;
       return;

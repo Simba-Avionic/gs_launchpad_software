@@ -142,7 +142,7 @@ void check_commands_input()
   if (is_aborted && ( millis() - last_abort_msg_time > TIMEOUT_ABORT_ms )) is_aborted = false;
 
   // if there was no command for a certain ammount of time there could be some connection problem and we should go to safe state of the system
-  if (millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
+  if (!is_aborted && millis()-last_command_time > THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms)
   {
     last_command_time = millis();
     goToSafeState();
@@ -151,6 +151,8 @@ void check_commands_input()
   auto msg = messenger.receive();
 
   if (msg == nullptr) return;
+
+  // Serial.println((int)msg->getID());
 
   switch (msg->getID())
   {
@@ -175,6 +177,7 @@ void check_commands_input()
       {
         is_aborted = true;
         last_abort_msg_time = millis();
+        last_command_time = millis();
         abort();
       }
       break;
