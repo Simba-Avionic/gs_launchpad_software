@@ -10,6 +10,7 @@
 #include "gs_interfaces/msg/tanking_actuators.hpp"
 #include "gs_interfaces/msg/pressure.hpp"
 #include "gs_interfaces/msg/tanking_commands.hpp"
+#include "gs_interfaces/msg/tanking_abort.hpp"
 
 #include "GSUART.hpp"
 #include "PowerMonitor.hpp"
@@ -35,6 +36,7 @@ private:
     rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::TankingActuators>::SharedPtr tankingActuatorsPub;
     rclcpp::Subscription<gs_interfaces::msg::TankingCommands>::SharedPtr tankingCmdsSub;
+    rclcpp::Subscription<gs_interfaces::msg::TankingAbort>::SharedPtr tankingAbortSub;
     
     std::unique_ptr<PowerMonitor> powerMonitor;
     rclcpp::TimerBase::SharedPtr oneSecondTimer;
@@ -65,6 +67,7 @@ private:
     void publishPower(const GSUART::MsgPowerTanking* msgPowerTanking);
 
     void tankingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg);
+    void abortCallback(const gs_interfaces::msg::TankingAbort::SharedPtr msg);
 };
 
 /*

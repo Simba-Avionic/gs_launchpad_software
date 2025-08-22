@@ -26,6 +26,14 @@ void Tanking::tankingControlCallback(const gs_interfaces::msg::TankingCommands::
     steerFueling(msg->valve_feed_oxidizer, msg->valve_feed_pressurizer, msg->valve_vent_oxidizer, msg->valve_vent_pressurizer, msg->decoupler_oxidizer, msg->decoupler_pressurizer);
 }
 
+void Tanking::abortCallback(const gs_interfaces::msg::TankingAbort::SharedPtr msg)
+{
+    RCLCPP_WARN(this->get_logger(), "ABORT command received from %s", msg->header.frame_id.c_str());
+    GSUART::MsgAbort abortMsg;
+    abortMsg.abort = true;
+    messenger.send(abortMsg);
+}
+
 void Tanking::readingLoop()
 {
     while (true)
