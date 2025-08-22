@@ -10,6 +10,7 @@ Tanking::Tanking(std::string serialPort) : Node("tanking"),
     pressureValvesPub = this->create_publisher<gs_interfaces::msg::Pressure>("/tanking/pressure", 3);
     tankingActuatorsPub = this->create_publisher<gs_interfaces::msg::TankingActuators>("/tanking/valves/servos", 3);
     tankingCmdsSub = this->create_subscription<gs_interfaces::msg::TankingCommands>("/tanking/commands", 3, std::bind(&Tanking::tankingControlCallback, this, std::placeholders::_1));
+    tankingAbortSub = this->create_subscription<gs_interfaces::msg::TankingAbort>("/tanking/abort", 3, std::bind(&Tanking::abortCallback, this, std::placeholders::_1));
 
     oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Tanking::oneSecondTimerCallback, this));
     readT = std::thread(&Tanking::readingLoop, this);
