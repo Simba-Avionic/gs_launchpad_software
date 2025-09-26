@@ -182,6 +182,14 @@ void check_commands_input()
       }
       break;
     }
+    case GSUART::MsgID::PING:
+    {
+      const GSUART::MsgPing* msgPing = static_cast<const GSUART::MsgPing*>(msg);
+      GSUART::MsgPong msgPong;
+      msgPong.seq = msgPing->seq;
+      messenger.send(msgPong);
+      break;
+    }
     default:
     // unknown message type
     break;
@@ -292,7 +300,7 @@ void send_valves_position()
   msgValves.valve_vent_pressurizer = valve_vent_pressurizer->isOpen();
   msgValves.decoupler_oxidizer = decoupler_oxidizer->isOpen();
   msgValves.decoupler_pressurizer = decoupler_pressurizer->isOpen();
-  messenger.send(msgValves);
+  // messenger.send(msgValves);
 }
 
 void send_power_sensors()
@@ -302,7 +310,7 @@ void send_power_sensors()
   msgPower.v7_4.mA = czujnik_pradu_7v.getCurrent_mA();
   msgPower.v12.V = czujnik_pradu_12v.getBusVoltage_V();
   msgPower.v12.mA = czujnik_pradu_12v.getCurrent_mA();
-  messenger.send(msgPower);
+  // messenger.send(msgPower);
 }
 
 void send_uart_stats()

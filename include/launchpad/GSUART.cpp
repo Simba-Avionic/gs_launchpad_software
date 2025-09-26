@@ -210,6 +210,12 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::ABORT:
       receivedMsg = new MsgAbort();
       break;
+    case MsgID::PING:
+      receivedMsg = new MsgPing();
+      break;
+    case MsgID::PONG:
+      receivedMsg = new MsgPong();
+      break;
     default:
       receivedMsg = nullptr;
       return;
@@ -435,6 +441,28 @@ void MsgAbort::serialize(Byte* bytes_out, size_t* size_out) const {
 void MsgAbort::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < sizeof(bool)) return;
   memcpy(&abort, bytes_in, sizeof(bool));
+}
+
+void MsgPing::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(seq);
+  memcpy(bytes_out, &seq, sizeof(seq));
+}
+
+void MsgPing::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(seq)) return;
+  memcpy(&seq, bytes_in, sizeof(seq));
+}
+
+void MsgPong::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(seq);
+  memcpy(bytes_out, &seq, sizeof(seq));
+}
+
+void MsgPong::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(seq)) return;
+  memcpy(&seq, bytes_in, sizeof(seq));
 }
 
 void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx) {

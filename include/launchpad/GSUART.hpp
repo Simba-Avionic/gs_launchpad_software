@@ -50,7 +50,10 @@ namespace GSUART
         UART_STATS = 0x06,
         POWER_TANKING = 0x07,
         
-        ABORT = 0xDD
+        ABORT = 0xDD,
+
+        PING = 0xFE,
+        PONG = 0xFF
     };
 
 
@@ -238,6 +241,26 @@ namespace GSUART
     public:
         MsgAbort() : Message(MsgID::ABORT) {}
         bool abort = false;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgPing : public Message
+    {
+    public:
+        MsgPing() : Message(MsgID::PING) {}
+        uint32_t seq = 0;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgPong : public Message
+    {
+    public:
+        MsgPong() : Message(MsgID::PONG) {}
+        uint32_t seq = 0;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
