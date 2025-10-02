@@ -33,6 +33,7 @@ private:
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::TankingActuators>::SharedPtr tankingActuatorsPub;
+    rclcpp::Publisher<gs_interfaces::msg::PowerTanking>::SharedPtr tankingPowerPub;
     rclcpp::Subscription<gs_interfaces::msg::TankingCommands>::SharedPtr tankingCmdsSub;
     rclcpp::Subscription<gs_interfaces::msg::TankingAbort>::SharedPtr tankingAbortSub;
     
@@ -61,6 +62,8 @@ private:
     
     void publishValvesTemperature(const GSUART::MsgTemperature* msgTemperature);
     void publishValvesPressure(const GSUART::MsgPressure* msgPressure);
+
+    void publishTankingPower(const GSUART::MsgPowerTanking* msgPower);
 
     void tankingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg);
     void abortCallback(const gs_interfaces::msg::TankingAbort::SharedPtr msg);
