@@ -218,6 +218,8 @@ void Tanking::publishRemoteUartStats(const GSUART::MsgUartStats* msgUARTStats)
 void Tanking::publishTankingPower(const GSUART::MsgPowerTanking* msgPower)
 {
     gs_interfaces::msg::PowerTanking msg;
+    msg.header.stamp = this->now();
+    msg.header.frame_id = this->get_fully_qualified_name();
     msg.v7_4.bus_voltage_v = msgPower->v7_4.V;
     msg.v7_4.current_ma = msgPower->v7_4.mA;
     msg.v12.bus_voltage_v = msgPower->v12.V;
