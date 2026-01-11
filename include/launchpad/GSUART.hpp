@@ -3,7 +3,7 @@
 #define GSUART_PLATFORM_ARDUINO     0
 #define GSUART_PLATFORM_RPI_UBUNTU  1
 #ifndef GSUART_PLATFORM
-#define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
+#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
 #endif
 #pragma once
 
@@ -49,8 +49,12 @@ namespace GSUART
         PRESSURE = 0x05,
         UART_STATS = 0x06,
         POWER_TANKING = 0x07,
+        HYDRO_SENSORS = 0x08,
         
-        ABORT = 0xDD
+        ABORT = 0xDD,
+
+        MSG_PING = 0xFE,
+        MSG_PONG = 0xFF
     };
 
 
@@ -208,6 +212,17 @@ namespace GSUART
         void deserialize(const Byte* bytes_in, const size_t size_in) override;
     };
 
+    class MsgHydroSensors : public Message
+    {
+    public:
+        MsgHydroSensors() : Message(MsgID::HYDRO_SENSORS) {}
+        float temperature_C = 0.0f;
+        float pressure_bar = 0.0f;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
     class MsgUartStats : public Message
     {
     public:
@@ -238,6 +253,26 @@ namespace GSUART
     public:
         MsgAbort() : Message(MsgID::ABORT) {}
         bool abort = false;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgPing : public Message
+    {
+    public:
+        MsgPing() : Message(MsgID::MSG_PING) {}
+        uint32_t seq = 0;
+    private:
+        void serialize(Byte* bytes_out, size_t* size_out) const override;
+        void deserialize(const Byte* bytes_in, const size_t size_in) override;
+    };
+
+    class MsgPong : public Message
+    {
+    public:
+        MsgPong() : Message(MsgID::MSG_PONG) {}
+        uint32_t seq = 0;
     private:
         void serialize(Byte* bytes_out, size_t* size_out) const override;
         void deserialize(const Byte* bytes_in, const size_t size_in) override;

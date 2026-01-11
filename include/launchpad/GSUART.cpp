@@ -201,11 +201,23 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::PRESSURE:
       receivedMsg = new MsgPressure();
       break;
+    case MsgID::HYDRO_SENSORS:
+      receivedMsg = new MsgHydroSensors();
+      break;
     case MsgID::UART_STATS:
       receivedMsg = new MsgUartStats();
       break;
     case MsgID::POWER_TANKING:
       receivedMsg = new MsgPowerTanking();
+      break;
+    case MsgID::ABORT:
+      receivedMsg = new MsgAbort();
+      break;
+    case MsgID::MSG_PING:
+      receivedMsg = new MsgPing();
+      break;
+    case MsgID::MSG_PONG:
+      receivedMsg = new MsgPong();
       break;
     default:
       receivedMsg = nullptr;
@@ -397,6 +409,19 @@ void MsgPressure::deserialize(const Byte* bytes_in, const size_t size_in) {
   memcpy(&pressure_bar, bytes_in, size_in);
 }
 
+void MsgHydroSensors::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(float) + sizeof(float);
+  memcpy(bytes_out, &temperature_C, sizeof(float));
+  memcpy(bytes_out + sizeof(float), &pressure_bar, sizeof(float));
+}
+
+void MsgHydroSensors::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < 2*sizeof(float)) return;
+  memcpy(&temperature_C, bytes_in, sizeof(float));
+  memcpy(&pressure_bar, bytes_in + sizeof(float), sizeof(float));
+}
+
 void MsgUartStats::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
   *size_out = UARTStatistics::Stats::_STRUCT_SIZE;
@@ -432,6 +457,28 @@ void MsgAbort::serialize(Byte* bytes_out, size_t* size_out) const {
 void MsgAbort::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < sizeof(bool)) return;
   memcpy(&abort, bytes_in, sizeof(bool));
+}
+
+void MsgPing::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(seq);
+  memcpy(bytes_out, &seq, sizeof(seq));
+}
+
+void MsgPing::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(seq)) return;
+  memcpy(&seq, bytes_in, sizeof(seq));
+}
+
+void MsgPong::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(seq);
+  memcpy(bytes_out, &seq, sizeof(seq));
+}
+
+void MsgPong::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < sizeof(seq)) return;
+  memcpy(&seq, bytes_in, sizeof(seq));
 }
 
 void putByteIntoFrame(Byte byte, Byte* bytes, size_t& idx) {

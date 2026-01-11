@@ -10,9 +10,9 @@
 #include "gs_interfaces/msg/tanking_actuators.hpp"
 #include "gs_interfaces/msg/pressure.hpp"
 #include "gs_interfaces/msg/tanking_commands.hpp"
+#include "gs_interfaces/msg/tanking_abort.hpp"
 
 #include "GSUART.hpp"
-#include "PowerMonitor.hpp"
 
 class Tanking : public rclcpp::Node
 {
@@ -30,13 +30,13 @@ private:
     // local is RaspberryPi, remote is Arduino
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr localUartStatsValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr remoteUartStatsValvesPub;
-    rclcpp::Publisher<gs_interfaces::msg::PowerTanking>::SharedPtr powerMonitorPub;
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::TankingActuators>::SharedPtr tankingActuatorsPub;
+    rclcpp::Publisher<gs_interfaces::msg::PowerTanking>::SharedPtr tankingPowerPub;
     rclcpp::Subscription<gs_interfaces::msg::TankingCommands>::SharedPtr tankingCmdsSub;
+    rclcpp::Subscription<gs_interfaces::msg::TankingAbort>::SharedPtr tankingAbortSub;
     
-    std::unique_ptr<PowerMonitor> powerMonitor;
     rclcpp::TimerBase::SharedPtr oneSecondTimer;
     
     GSUART::UARTStatistics::Stats remoteUartStats;
@@ -62,9 +62,11 @@ private:
     
     void publishValvesTemperature(const GSUART::MsgTemperature* msgTemperature);
     void publishValvesPressure(const GSUART::MsgPressure* msgPressure);
-    void publishPower(const GSUART::MsgPowerTanking* msgPowerTanking);
+
+    void publishTankingPower(const GSUART::MsgPowerTanking* msgPower);
 
     void tankingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg);
+    void abortCallback(const gs_interfaces::msg::TankingAbort::SharedPtr msg);
 };
 
 /*
