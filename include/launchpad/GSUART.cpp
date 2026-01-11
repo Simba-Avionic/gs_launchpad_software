@@ -201,6 +201,9 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::PRESSURE:
       receivedMsg = new MsgPressure();
       break;
+    case MsgID::HYDRO_SENSORS:
+      receivedMsg = new MsgHydroSensors();
+      break;
     case MsgID::UART_STATS:
       receivedMsg = new MsgUartStats();
       break;
@@ -210,10 +213,10 @@ void Messenger::decodeMsg(Byte* msg_bytes, const size_t size) {
     case MsgID::ABORT:
       receivedMsg = new MsgAbort();
       break;
-    case MsgID::PING:
+    case MsgID::MSG_PING:
       receivedMsg = new MsgPing();
       break;
-    case MsgID::PONG:
+    case MsgID::MSG_PONG:
       receivedMsg = new MsgPong();
       break;
     default:
@@ -404,6 +407,19 @@ void MsgPressure::serialize(Byte* bytes_out, size_t* size_out) const {
 void MsgPressure::deserialize(const Byte* bytes_in, const size_t size_in) {
   if (bytes_in == nullptr || size_in < sizeof(float)) return;
   memcpy(&pressure_bar, bytes_in, size_in);
+}
+
+void MsgHydroSensors::serialize(Byte* bytes_out, size_t* size_out) const {
+  if (bytes_out == nullptr || size_out == nullptr) return;
+  *size_out = sizeof(float) + sizeof(float);
+  memcpy(bytes_out, &temperature_C, sizeof(float));
+  memcpy(bytes_out + sizeof(float), &pressure_bar, sizeof(float));
+}
+
+void MsgHydroSensors::deserialize(const Byte* bytes_in, const size_t size_in) {
+  if (bytes_in == nullptr || size_in < 2*sizeof(float)) return;
+  memcpy(&temperature_C, bytes_in, sizeof(float));
+  memcpy(&pressure_bar, bytes_in + sizeof(float), sizeof(float));
 }
 
 void MsgUartStats::serialize(Byte* bytes_out, size_t* size_out) const {

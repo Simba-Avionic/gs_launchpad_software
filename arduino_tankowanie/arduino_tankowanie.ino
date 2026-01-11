@@ -5,6 +5,8 @@
 #include "DFRobot_INA219.h"
 #include "Servo.h"
 #include "ServoValve.hpp"
+#include "PT100.hpp"
+#include "PressureConverter.hpp"
 
 // #define GSUART_PLATFORM_ARDUINO     1
 // #define GSUART_PLATFORM_RPI_UBUNTU  0
@@ -13,6 +15,7 @@
 GSUART::Messenger messenger(&Serial);
 GSUART::MsgPowerTanking msgPower;
 GSUART::MsgZaworyPozycja msgValves;
+GSUART::MsgHydroSensors msgHydroSensors;
 
 ServoValve* valve_feed_oxidizer;
 ServoValve* valve_feed_pressurizer;
@@ -26,33 +29,42 @@ ElectroValve* valve_vent_pressurizer;
 DFRobot_INA219_IIC czujnik_pradu_7v(&Wire, INA219_I2C_ADDRESS4);
 DFRobot_INA219_IIC czujnik_pradu_12v(&Wire, INA219_I2C_ADDRESS1);
 
-#define INTERVAL_CHECK_COMMANDS_INPUT 10
-#define INTERVAL_SEND_VALVES_POSITION 700
-#define INTERVAL_CHECK_VALVES_POSITION 100
-#define INTERVAL_SEND_POWER_SENSORS 500
-#define INTERVAL_CHECK_POWER_SENSORS 100
-#define INTERVAL_SEND_UART_STATS 4000
-#define INTERVAL_CHECK_BUTTONS 100
-#define DELAY_MAIN_LOOP 1
+PT100 temperature_sensor_oxidizer(53, 49);
+PressureConverter pressure_sensor_oxidizer(A13);
 
-#define THRESHOLD_VALVE_POS_CHANGE_SEND 4
-#define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND 85
-#define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms 3000
+#define INTERVAL_CHECK_COMMANDS_INPUT     10
+#define INTERVAL_SEND_VALVES_POSITION     700
+#define INTERVAL_CHECK_VALVES_POSITION    100
+#define INTERVAL_SEND_POWER_SENSORS       500
+#define INTERVAL_SEND_HYDRAULIC_SENSORS   500
+#define INTERVAL_CHECK_POWER_SENSORS      100
+#define INTERVAL_CHECK_HYDRAULIC_SENSORS  200
+#define INTERVAL_SEND_UART_STATS          4000
+#define INTERVAL_CHECK_BUTTONS            100
+#define DELAY_MAIN_LOOP                   1
+
+#define THRESHOLD_VALVE_POS_CHANGE_SEND                 4
+#define THRESHOLD_CZUJNIK_PRADU_CURRENT_CHANGE_mA_SEND  85
+#define THRESHOLD_TEMPERATURE_C_CHANGE_PER_SEC_SEND     1.0f
+#define THRESHOLD_PRESSURE_P_CHANGE_PER_SEC_SEND        1.0f
+#define THRESHOLD_OSTATNIA_KOMENDA_ARRIVED_TIMEOUT_ms   3000
 
 #define TIMEOUT_ABORT_ms 30000 // 30s
 
-#define PIN_BUTTON_DECOUPLERS 10
-#define PIN_BUTTON_VENTS 8
-#define PIN_BUTTON_FEEDS 7
+#define PIN_BUTTON_DECOUPLERS 42
+#define PIN_BUTTON_VENTS 44
+#define PIN_BUTTON_FEEDS 46
 
-#define PIN_DIODE 13
+#define PIN_DIODE 7
 
 unsigned long time_last_check_commands_input = 0;
 unsigned long time_last_sent_valves_position = 0;
 unsigned long time_last_sent_power_sensors = 0;
+unsigned long time_last_sent_hydraulic_sensors = 0;
 unsigned long time_last_sent_uart_stats = 0;
 unsigned long time_last_check_valves_position = 0;
 unsigned long time_last_check_power_sensors = 0;
+unsigned long time_last_check_hydraulic_sensors = 0;
 unsigned long time_last_check_buttons = 0;
 
 unsigned long last_command_time = 0;
@@ -60,9 +72,11 @@ unsigned long last_command_time = 0;
 void check_commands_input();
 void check_valves_position();
 void check_power_sensors();
+void check_hydraulic_sensors();
 void check_buttons();
 void send_valves_position();
 void send_power_sensors();
+void send_hydraulic_sensors();
 void send_uart_stats();
 
 void goToSafeState();
@@ -78,14 +92,14 @@ void setup() {
   Serial.begin(9600);
   while(!Serial);
 
-  valve_feed_oxidizer = new ServoValve(9, 600, 2440, A0);
-  valve_feed_pressurizer = new ServoValve(6, 600, 2440, A1);
+  valve_feed_oxidizer = new ServoValve(2, 600, 2440, A14);
+  valve_feed_pressurizer = new ServoValve(3, 600, 2440, A15);
 
-  decoupler_oxidizer = new Decoupler(2, 3);
-  decoupler_pressurizer = new Decoupler(4, 5);
+  decoupler_oxidizer = new Decoupler(25, 23);
+  decoupler_pressurizer = new Decoupler(29, 27);
 
-  valve_vent_oxidizer = new ElectroValve(11);
-  valve_vent_pressurizer = new ElectroValve(12);
+  valve_vent_oxidizer = new ElectroValve(31);
+  valve_vent_pressurizer = new ElectroValve(33);
 
   while(czujnik_pradu_7v.begin() != true) {
     // Serial.println("czujnik_pradu_7v begin failed");
@@ -99,7 +113,7 @@ void setup() {
     // tutaj wyslij blad zalaczenia czujnika
     delay(1000);
   }
-  // Serial.println("czujnik_pradu_12v begin OK");
+  Serial.println("czujnik_pradu_12v begin OK");
 
   goToSafeState();
   digitalWrite(PIN_DIODE, HIGH);
@@ -119,6 +133,9 @@ void loop() {
 
   if(time_now >= time_last_sent_power_sensors + INTERVAL_SEND_POWER_SENSORS)
     send_power_sensors();
+  
+  if (time_now >= time_last_sent_hydraulic_sensors + INTERVAL_SEND_HYDRAULIC_SENSORS)
+    send_hydraulic_sensors();
 
   if(time_now >= time_last_sent_uart_stats + INTERVAL_SEND_UART_STATS)
     send_uart_stats();
@@ -128,6 +145,9 @@ void loop() {
 
   if(time_now >= time_last_check_power_sensors + INTERVAL_CHECK_POWER_SENSORS)
     check_power_sensors();
+
+  if (time_now >= time_last_check_hydraulic_sensors + INTERVAL_CHECK_HYDRAULIC_SENSORS)
+   check_hydraulic_sensors();
 
   delay(DELAY_MAIN_LOOP);
 }
@@ -182,7 +202,7 @@ void check_commands_input()
       }
       break;
     }
-    case GSUART::MsgID::PING:
+    case GSUART::MsgID::MSG_PING:
     {
       const GSUART::MsgPing* msgPing = static_cast<const GSUART::MsgPing*>(msg);
       GSUART::MsgPong msgPong;
@@ -224,6 +244,16 @@ void check_power_sensors()
 
   czujnik_pradu_7v_last_current_mA = current_1;
   czujnik_pradu_12v_last_current_mA = current_2;
+}
+
+void check_hydraulic_sensors()
+{
+  time_last_check_hydraulic_sensors = millis();
+  temperature_sensor_oxidizer.readTemperature();
+  pressure_sensor_oxidizer.readPressure();
+
+  if(abs(temperature_sensor_oxidizer.deltaT()) > THRESHOLD_TEMPERATURE_C_CHANGE_PER_SEC_SEND || abs(pressure_sensor_oxidizer.deltaP()) > THRESHOLD_PRESSURE_P_CHANGE_PER_SEC_SEND)
+    send_hydraulic_sensors();
 }
 
 void check_buttons()
@@ -300,7 +330,14 @@ void send_valves_position()
   msgValves.valve_vent_pressurizer = valve_vent_pressurizer->isOpen();
   msgValves.decoupler_oxidizer = decoupler_oxidizer->isOpen();
   msgValves.decoupler_pressurizer = decoupler_pressurizer->isOpen();
-  // messenger.send(msgValves);
+  messenger.send(msgValves);
+
+  // Serial.print("valve feed: ");
+  // Serial.println(valve_feed_oxidizer->position());
+  // Serial.print("valve vent: ");
+  // Serial.println(valve_vent_oxidizer->isOpen());
+  // Serial.print("decoupler: ");
+  // Serial.println(decoupler_oxidizer->isOpen());
 }
 
 void send_power_sensors()
@@ -310,7 +347,35 @@ void send_power_sensors()
   msgPower.v7_4.mA = czujnik_pradu_7v.getCurrent_mA();
   msgPower.v12.V = czujnik_pradu_12v.getBusVoltage_V();
   msgPower.v12.mA = czujnik_pradu_12v.getCurrent_mA();
-  // messenger.send(msgPower);
+  messenger.send(msgPower);
+
+  // Serial.print("cz7v: ");
+  // Serial.print(msgPower.v7_4.V);
+  // Serial.print(" V ");
+  // Serial.print(msgPower.v7_4.mA);
+  // Serial.println(" mA ");
+
+  // Serial.print("cz12v: ");
+  // Serial.print(msgPower.v12.V);
+  // Serial.print(" V ");
+  // Serial.print(msgPower.v12.mA);
+  // Serial.println(" mA ");
+}
+
+void send_hydraulic_sensors()
+{
+  time_last_sent_hydraulic_sensors = millis();
+  msgHydroSensors.temperature_C = temperature_sensor_oxidizer.temperature();
+  msgHydroSensors.pressure_bar = pressure_sensor_oxidizer.pressure();
+  messenger.send(msgHydroSensors);
+
+  // Serial.print(msgHydroSensors.temperature_C);
+  // Serial.print(" C ");
+  // Serial.print(msgHydroSensors.pressure_bar);
+  // Serial.print(" bar ");
+  // Serial.print(temperature_sensor_oxidizer.deltaT());
+  // Serial.print(" ");
+  // Serial.println(pressure_sensor_oxidizer.deltaP());
 }
 
 void send_uart_stats()
