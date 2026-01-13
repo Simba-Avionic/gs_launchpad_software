@@ -20,6 +20,8 @@ public:
 
   void openWithExtraSteps();
 
+  void open();
+
   void close();
 
   void check();

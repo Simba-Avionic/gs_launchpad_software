@@ -92,7 +92,11 @@ void setup() {
   Serial.begin(9600);
   while(!Serial);
 
-  valve_feed_oxidizer = new ServoValve(2, 600, 2440, A14);
+  // serwo oxidizer
+  // open       - 460
+  // soft close - idealnie na środku między zębami - 2240
+  // hard close - lekko, odrobinę odstaje od zęba  - 2300
+  valve_feed_oxidizer = new ServoValve(2, 460, 2280, A14);
   valve_feed_pressurizer = new ServoValve(3, 600, 2440, A15);
 
   decoupler_oxidizer = new Decoupler(25, 23);
@@ -180,8 +184,10 @@ void check_commands_input()
     {
       if (is_aborted) break;
       const GSUART::MsgZaworySterowanie* msgZaworySterowanie = static_cast<const GSUART::MsgZaworySterowanie*>(msg);
-      msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->openWithExtraSteps()     : valve_feed_oxidizer->close();
-      msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->openWithExtraSteps()  : valve_feed_pressurizer->close();
+      // msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->openWithExtraSteps()     : valve_feed_oxidizer->close();
+      msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->open()     : valve_feed_oxidizer->close();     // wersja z instant open zaworu
+      // msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->openWithExtraSteps()  : valve_feed_pressurizer->close();
+      msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->open()  : valve_feed_pressurizer->close();  // wersja z instant open zaworu
       msgZaworySterowanie->valve_vent_oxidizer      ? valve_vent_oxidizer->open()                   : valve_vent_oxidizer->close();
       msgZaworySterowanie->valve_vent_pressurizer   ? valve_vent_pressurizer->open()                : valve_vent_pressurizer->close();
       msgZaworySterowanie->decoupler_oxidizer       ? decoupler_oxidizer->open()                    : decoupler_oxidizer->close();
@@ -302,8 +308,10 @@ void check_buttons()
   if (digitalRead(PIN_BUTTON_FEEDS) == LOW) {
     anything_pressed = true;
     
-    valve_feed_oxidizer->openWithExtraSteps();
-    valve_feed_pressurizer->openWithExtraSteps();
+    // valve_feed_oxidizer->openWithExtraSteps();
+    // valve_feed_pressurizer->openWithExtraSteps();
+    valve_feed_oxidizer->open();    // wersja z instant open zaworu
+    valve_feed_pressurizer->open(); // wersja z instant open zaworu
 
     if (!button_feeds_last_pressed) send_valves = true;
     button_feeds_last_pressed = true;
