@@ -12,6 +12,8 @@ public:
   // only returns last saved value of the pressure from the private variable, does not perform a new reading
   float pressure();
 
+  float raw_voltage();
+
   // returns a pressure change - value represents a pressure change per second - calculation based on last reading
   float deltaP();
 
@@ -21,4 +23,6 @@ private:
   float pressure_Bar;
   float pressure_change_per_second;
   unsigned long last_reading_time = 0;
+
+  float voltage_V;
 };

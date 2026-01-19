@@ -117,7 +117,7 @@ void setup() {
     // tutaj wyslij blad zalaczenia czujnika
     delay(1000);
   }
-  Serial.println("czujnik_pradu_12v begin OK");
+  // Serial.println("czujnik_pradu_12v begin OK");
 
   goToSafeState();
   digitalWrite(PIN_DIODE, HIGH);
@@ -381,6 +381,8 @@ void send_hydraulic_sensors()
   // Serial.print(" C ");
   // Serial.print(msgHydroSensors.pressure_bar);
   // Serial.print(" bar ");
+  // Serial.print(pressure_sensor_oxidizer.raw_voltage());
+  // Serial.println(" V");
   // Serial.print(temperature_sensor_oxidizer.deltaT());
   // Serial.print(" ");
   // Serial.println(pressure_sensor_oxidizer.deltaP());

@@ -10,7 +10,11 @@ float PressureConverter::readPressure()
 {
   #define ADC_MAX       1023.0f
   #define PRESSURE_MAX  100.0f
-  float new_pressure = float(analogRead(this->adc_pin)) / ADC_MAX * PRESSURE_MAX;
+  #define VOLTAGE_MAX   5.0f
+  
+  int raw_value = analogRead(this->adc_pin);
+  voltage_V = float(raw_value) / ADC_MAX * VOLTAGE_MAX;
+  float new_pressure = float(raw_value) / ADC_MAX * PRESSURE_MAX;
   float new_time = millis();
   unsigned long time_distance = new_time - this->last_reading_time;
 
@@ -24,6 +28,11 @@ float PressureConverter::readPressure()
 float PressureConverter::pressure()
 {
   return this->pressure_Bar;
+}
+
+float PressureConverter::raw_voltage()
+{
+  return this->voltage_V;
 }
 
 float PressureConverter::deltaP()
