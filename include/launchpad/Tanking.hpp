@@ -8,9 +8,10 @@
 #include "gs_interfaces/msg/uart_statistics.hpp"
 #include "gs_interfaces/msg/power_tanking.hpp"
 #include "gs_interfaces/msg/tanking_actuators.hpp"
-#include "gs_interfaces/msg/pressure.hpp"
+// #include "gs_interfaces/msg/pressure.hpp"
 #include "gs_interfaces/msg/tanking_commands.hpp"
 #include "gs_interfaces/msg/tanking_abort.hpp"
+#include "gs_interfaces/msg/tanking_sensors.hpp"
 
 #include "GSUART.hpp"
 
@@ -31,9 +32,10 @@ private:
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr localUartStatsValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr remoteUartStatsValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperatureValvesPub;
-    rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureValvesPub;
+    // rclcpp::Publisher<gs_interfaces::msg::Pressure>::SharedPtr pressureValvesPub;
     rclcpp::Publisher<gs_interfaces::msg::TankingActuators>::SharedPtr tankingActuatorsPub;
     rclcpp::Publisher<gs_interfaces::msg::PowerTanking>::SharedPtr tankingPowerPub;
+    rclcpp::Publisher<gs_interfaces::msg::TankingSensors>::SharedPtr tankingSensorsPub;
     rclcpp::Subscription<gs_interfaces::msg::TankingCommands>::SharedPtr tankingCmdsSub;
     rclcpp::Subscription<gs_interfaces::msg::TankingAbort>::SharedPtr tankingAbortSub;
     
@@ -61,7 +63,9 @@ private:
     void publishValvesCurrPosition(const GSUART::MsgZaworyPozycja* msgZaworyPos);
     
     void publishValvesTemperature(const GSUART::MsgTemperature* msgTemperature);
-    void publishValvesPressure(const GSUART::MsgPressure* msgPressure);
+    // void publishValvesPressure(const GSUART::MsgPressure* msgPressure);
+
+    void publishHydroSensors(const GSUART::MsgHydroSensors* msgHydroSensors);
 
     void publishTankingPower(const GSUART::MsgPowerTanking* msgPower);
 

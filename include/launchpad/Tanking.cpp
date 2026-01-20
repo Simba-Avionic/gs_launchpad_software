@@ -6,11 +6,12 @@ Tanking::Tanking(std::string serialPort) : Node("tanking"),
     localUartStatsValvesPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/tanking/uart_stats", 3);
     remoteUartStatsValvesPub = this->create_publisher<gs_interfaces::msg::UartStatistics>("/tanking/remote_uart_stats", 3);
     temperatureValvesPub = this->create_publisher<gs_interfaces::msg::Temperature>("/tanking/temperature", 3);
-    pressureValvesPub = this->create_publisher<gs_interfaces::msg::Pressure>("/tanking/pressure", 3);
+    // pressureValvesPub = this->create_publisher<gs_interfaces::msg::Pressure>("/tanking/pressure", 3);
     tankingActuatorsPub = this->create_publisher<gs_interfaces::msg::TankingActuators>("/tanking/valves/servos", 3);
     tankingPowerPub = this->create_publisher<gs_interfaces::msg::PowerTanking>("/tanking/power", 3);
     tankingCmdsSub = this->create_subscription<gs_interfaces::msg::TankingCommands>("/tanking/commands", 3, std::bind(&Tanking::tankingControlCallback, this, std::placeholders::_1));
     tankingAbortSub = this->create_subscription<gs_interfaces::msg::TankingAbort>("/tanking/abort", 3, std::bind(&Tanking::abortCallback, this, std::placeholders::_1));
+    tankingSensorsPub = this->create_publisher<gs_interfaces::msg::TankingSensors>("/tanking/sensors", 3);
 
     oneSecondTimer = this->create_wall_timer(std::chrono::seconds(1), std::bind(&Tanking::oneSecondTimerCallback, this));
     readT = std::thread(&Tanking::readingLoop, this);
@@ -45,6 +46,9 @@ void Tanking::readingLoop()
             msg = messenger.receive();
         }
 
+        // print msg id
+        // printf("ID: %d\n", (int)msg->getID());
+
         switch (msg->getID())
         {
             case GSUART::MsgID::ZAWORY_POZYCJA:
@@ -61,11 +65,18 @@ void Tanking::readingLoop()
                     publishValvesTemperature(msgTemperature);
                 break;
             }
-            case GSUART::MsgID::PRESSURE:
+            // case GSUART::MsgID::PRESSURE:
+            // {
+            //     const GSUART::MsgPressure* msgPressure = dynamic_cast<const GSUART::MsgPressure*>(msg);
+            //     if (pressureValvesPub)
+            //         publishValvesPressure(msgPressure);
+            //     break;
+            // }
+            case GSUART::MsgID::HYDRO_SENSORS:
             {
-                const GSUART::MsgPressure* msgPressure = dynamic_cast<const GSUART::MsgPressure*>(msg);
-                if (pressureValvesPub)
-                    publishValvesPressure(msgPressure);
+                const GSUART::MsgHydroSensors* msgHydroSensors = dynamic_cast<const GSUART::MsgHydroSensors*>(msg);
+                if (tankingSensorsPub)
+                    publishHydroSensors(msgHydroSensors);
                 break;
             }
             case GSUART::MsgID::UART_STATS:
@@ -184,13 +195,23 @@ void Tanking::publishValvesTemperature(const GSUART::MsgTemperature* msgTemperat
     temperatureValvesPub->publish(msg);
 }
 
-void Tanking::publishValvesPressure(const GSUART::MsgPressure* msgPressure)
+// void Tanking::publishValvesPressure(const GSUART::MsgPressure* msgPressure)
+// {
+//     gs_interfaces::msg::Pressure msg;
+//     msg.header.stamp = this->now();
+//     msg.header.frame_id = this->get_fully_qualified_name();
+//     msg.pressure_bar = msgPressure->pressure_bar;
+//     pressureValvesPub->publish(msg);
+// }
+
+void Tanking::publishHydroSensors(const GSUART::MsgHydroSensors* msgHydroSensors)
 {
-    gs_interfaces::msg::Pressure msg;
+    gs_interfaces::msg::TankingSensors msg;
     msg.header.stamp = this->now();
     msg.header.frame_id = this->get_fully_qualified_name();
-    msg.pressure_bar = msgPressure->pressure_bar;
-    pressureValvesPub->publish(msg);
+    msg.temperature_hydra = msgHydroSensors->temperature_C;
+    msg.pressure_bar = msgHydroSensors->pressure_bar;
+    tankingSensorsPub->publish(msg);
 }
 
 void Tanking::publishRemoteUartStats(const GSUART::MsgUartStats* msgUARTStats)
