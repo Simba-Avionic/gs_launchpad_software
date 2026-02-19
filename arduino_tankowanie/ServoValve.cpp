@@ -3,18 +3,22 @@
 #include "Arduino.h"
 #include <Servo.h>
 
-ServoValve::ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentiometer)
+ServoValve::ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentiometer, int map_pos_close, int map_pos_open)
 {
   // Serial.print("constructorXD ");
   // Serial.println(pin_servo);
   servo.attach(pin_servo, pwm_min, pwm_max);
   potentiometer_pin = pin_potentiometer;
+  this->map_pos_close = map_pos_close;
+  this->map_pos_open = map_pos_open;
 }
 
 int ServoValve::readPosition()
 {
   position_last = position_current;
-  position_current = analogRead(potentiometer_pin) / 10;  // 0-1023  -> 0-102
+  int new_reading = analogRead(potentiometer_pin) / 10;  // 0-1023  ->  mapowanie np. 11-86 ->  0-100
+  position_current = map(new_reading, map_pos_close, map_pos_open, 0, 100);
+
   return position_current;
 }
 

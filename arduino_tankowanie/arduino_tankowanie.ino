@@ -96,8 +96,8 @@ void setup() {
   // open       - 460
   // soft close - idealnie na środku między zębami - 2240
   // hard close - lekko, odrobinę odstaje od zęba  - 2300
-  valve_feed_oxidizer = new ServoValve(2, 460, 2280, A14);
-  valve_feed_pressurizer = new ServoValve(3, 600, 2440, A15);
+  valve_feed_oxidizer = new ServoValve(2, 460, 2280, A14, 14, 84);
+  valve_feed_pressurizer = new ServoValve(3, 600, 2440, A15, 0, 100);
 
   decoupler_oxidizer = new Decoupler(25, 23);
   decoupler_pressurizer = new Decoupler(29, 27);

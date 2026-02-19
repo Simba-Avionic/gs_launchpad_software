@@ -4,7 +4,7 @@
 class ServoValve
 {
 public:
-  ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentiometer);
+  ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentiometer, int map_pos_close, int map_pos_open);
 
   // read value from potentiometer, DOES perform new adc reading
   int readPosition();
@@ -37,6 +37,9 @@ private:
   #define STEP_TIME 500
   unsigned long last_step_open_time = 0;
   int open_idx = 0;
+
+  int map_pos_close = 0;
+  int map_pos_open = 0;
 
   enum Command {
     HARD_CLOSE = 0, SOFT_CLOSE, STEP_OPEN, SET_OPEN 
