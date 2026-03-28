@@ -255,11 +255,16 @@ void Messenger::openSerialPort() {
         tty.c_oflag &= ~ONLCR;  // Prevent conversion of newline to carriage return/line feed
 
         tty.c_cc[VTIME] = 10;  // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
-        tty.c_cc[VMIN] = 0;
+        tty.c_cc[VMIN] = 0;   // Return immediately with whatever is available
 
         // Set in/out baud rate to be 9600
         cfsetispeed(&tty, B9600);
         cfsetospeed(&tty, B9600);
+        // cfsetispeed(&tty, B57600);
+        // cfsetospeed(&tty, B57600);
+        // 115200
+        // cfsetispeed(&tty, B115200);
+        // cfsetospeed(&tty, B115200);
 
         // Save tty settings, also checking for error
         if (tcsetattr(serialPortFD, TCSANOW, &tty) != 0) {

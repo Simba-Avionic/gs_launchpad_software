@@ -29,11 +29,19 @@ set(SOURCES_TANKING
   include/launchpad/GSUART.cpp
 )
 
+set(SOURCES_WEIGHT_MODULE
+  src/main_weightmodule.cpp
+  include/launchpad/ArduinoWyrzutnia.cpp
+  include/launchpad/GSUART.cpp
+)
+
 # add_executable(gs_launchbox ${SOURCES_LAUNCHBOX})
 add_executable(gs_tanking ${SOURCES_TANKING})
+add_executable(gs_weightmodule ${SOURCES_WEIGHT_MODULE})
 
 # ament_target_dependencies(gs_launchbox rclcpp)
 ament_target_dependencies(gs_tanking rclcpp gs_interfaces)
+ament_target_dependencies(gs_weightmodule rclcpp gs_interfaces)
 
 # target_link_libraries(gs_launchbox i2c 
 #   gs_interfaces__rosidl_typesupport_cpp
@@ -51,4 +59,7 @@ ament_target_dependencies(gs_tanking rclcpp gs_interfaces)
 install(TARGETS gs_tanking 
   DESTINATION lib/${PROJECT_NAME})
 
+install(TARGETS gs_weightmodule 
+  DESTINATION lib/${PROJECT_NAME})
+  
 ament_package()

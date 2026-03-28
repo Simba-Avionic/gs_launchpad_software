@@ -11,6 +11,14 @@
 #include <vector>
 #include <functional>
 
+#include "gs_interfaces/msg/uart_statistics.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "gs_interfaces/msg/load_cells.hpp"
+#include "gs_interfaces/msg/temperature.hpp"
+#include "gs_interfaces/msg/load_cells_tare.hpp"
+#include "gs_interfaces/msg/load_cells_params.hpp"
+
+
 // #define GSUART_PLATFORM 0        //    0 - arduino - GSUART_PLATFORM_ARDUINO
                                     //    1 - rpi ubuntu - GSUART_PLATFORM_RPI_UBUNTU
 #define GSUART_PLATFORM_ARDUINO     0
@@ -18,7 +26,7 @@
 #define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
 #include "GSUART.hpp"
 
-class ArduinoWyrzutnia
+class ArduinoWyrzutnia : public rclcpp::Node
 {
 public:
     struct tenso
@@ -44,7 +52,7 @@ public:
         }
     };
 
-    ArduinoWyrzutnia(std::string serialPort, std::function<void()> newTensoCallback, std::function<void()> newTemperatureCallback, std::function<void()> newUARTStatsCallback);
+    ArduinoWyrzutnia(std::string serialPort);
     ~ArduinoWyrzutnia();
 
     tenso& getTensoL();
@@ -61,8 +69,21 @@ public:
     void setScaleRight(double scale);
     void setLeanAngle(float angle);
 
+    void oneSecondTimerCallback();
+    
 private:
     tenso tensoL, tensoR;
+
+
+    rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr UartStatsPub;
+    rclcpp::Publisher<gs_interfaces::msg::UartStatistics>::SharedPtr localUartStatsPub;
+    rclcpp::Publisher<gs_interfaces::msg::LoadCells>::SharedPtr LoadCellsPub;
+    rclcpp::Publisher<gs_interfaces::msg::Temperature>::SharedPtr temperaturePub;
+    rclcpp::Publisher<gs_interfaces::msg::LoadCellsParams>::SharedPtr ParamsCellsPub;
+
+    rclcpp::Subscription<gs_interfaces::msg::LoadCellsTare>::SharedPtr tareSub;
+    
+    rclcpp::TimerBase::SharedPtr oneSecondTimer;
 
     struct Lean {
         float angle = 0.0;
@@ -76,8 +97,6 @@ private:
     GSUART::Messenger messenger;
     std::thread readT;
     void readingLoop();
-
-    std::function<void()> newTensoCallback;
-    std::function<void()> newTemperatureCallback;
-    std::function<void()> newUARTStatsCallback;
+    void tareCallback(const gs_interfaces::msg::LoadCellsTare::SharedPtr msg);
+    
 };
