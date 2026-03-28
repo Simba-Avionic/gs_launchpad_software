@@ -21,9 +21,10 @@
 
 namespace GSUART
 {
-    #define WRITE_BUFF_SIZE     256
-    #define RECEIVE_BUFF_SIZE   256
-    #define READ_BUFF_SIZE      64
+    #define WRITE_BUFF_SIZE         256
+    #define RECEIVE_BUFF_SIZE       256
+    #define READ_BUFF_SIZE          256
+    #define READ_FROM_SERIAL_SIZE   64
     
     #define RAMKA_META_SIZE     4
     #define RAMKA_START         0xCC    // 11001100   204(10) S: 172(10)

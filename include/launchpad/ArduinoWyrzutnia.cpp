@@ -78,7 +78,7 @@ void ArduinoWyrzutnia::readingLoop()
                 msg_load_cells.tenso_r.vehicle_mass_kg = tensoR.rocket_kg;
                 msg_load_cells.tenso_r.fuel_mass_kg = tensoR.fuel_kg;
 
-                msg_load_cells.combined_raw_mass_kg = tensoL.raw_value + tensoR.raw_value;
+                msg_load_cells.combined_raw_mass_kg = tensoL.raw_kg + tensoR.raw_kg;
                 msg_load_cells.combined_vehicle_mass_kg = tensoL.rocket_kg + tensoR.rocket_kg;
                 msg_load_cells.combined_fuel_mass_kg = tensoL.fuel_kg + tensoR.fuel_kg;
                 LoadCellsPub->publish(msg_load_cells);

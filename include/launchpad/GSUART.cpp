@@ -106,11 +106,12 @@ const Message* Messenger::receive() {
   Byte read_buff[READ_BUFF_SIZE*2];
   if (extra_buff_data_size > 0) // jesli cos zostalo z poprzedniego odczytu
     memcpy(read_buff, extra_buff, extra_buff_data_size);
-  int n = readFromSerialPort(read_buff+extra_buff_data_size, READ_BUFF_SIZE);
+  int n = readFromSerialPort(read_buff+extra_buff_data_size, READ_FROM_SERIAL_SIZE);
+  int total_n = n + extra_buff_data_size;
   extra_buff_data_size = 0;
 
   uartStats.stats.totalBytesReceived += n;
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < total_n; i++) {
     Byte b = read_buff[i];
     receive_buff[receive_buff_idx++] = b;
 
@@ -128,7 +129,13 @@ const Message* Messenger::receive() {
       decodeMsg(receive_buff, receive_buff_idx);
       receive_buff_idx = 0;
 
-      extra_buff_data_size = n-i-1;
+      extra_buff_data_size = total_n-i-1;
+      if (extra_buff_data_size >= READ_BUFF_SIZE)  // zabezpieczenie przed overflowem
+      {
+        extra_buff_data_size = 0;
+        uartStats.stats.bufforOverflows++;
+      }
+        
       memcpy(extra_buff, read_buff+i+1, extra_buff_data_size);
       break;
     }
