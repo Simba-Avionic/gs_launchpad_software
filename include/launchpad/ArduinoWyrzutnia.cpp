@@ -48,11 +48,11 @@ void ArduinoWyrzutnia::readingLoop()
                 tensoR.raw_value = msgTenso->tenso_right_raw;
                 tensoR.last_values[(tensoR.last_values_idx++) % 30] = tensoR.raw_value;
 
-                tensoL.raw_kg = tensoL.raw_value * tensoL.scale / 1000.0;
+                tensoL.raw_kg = (tensoL.raw_value - tensoL.no_decoupler_point) * tensoL.scale / 1000.0;
                 tensoL.rocket_kg = (tensoL.raw_value - tensoL.rocket_point) * tensoL.scale / 1000.0;
                 tensoL.fuel_kg = (tensoL.raw_value - tensoL.empty_rocket_point) * tensoL.scale / 1000.0;
 
-                tensoR.raw_kg = tensoR.raw_value * tensoR.scale / 1000.0;
+                tensoR.raw_kg = (tensoR.raw_value - tensoR.no_decoupler_point) * tensoR.scale / 1000.0;
                 tensoR.rocket_kg = (tensoR.raw_value - tensoR.rocket_point) * tensoR.scale / 1000.0;
                 tensoR.fuel_kg = (tensoR.raw_value - tensoR.empty_rocket_point) * tensoR.scale / 1000.0;
 
@@ -175,6 +175,13 @@ void ArduinoWyrzutnia::tareEmptyRocketPoint()
     RCLCPP_INFO(this->get_logger(), "Tarowanie utleniacz: %d, %d", tensoL.empty_rocket_point, tensoR.empty_rocket_point);
 }
 
+void ArduinoWyrzutnia::tareNoDecouplerPoint()
+{
+    tensoL.no_decoupler_point = tensoL.getAvgValue30();
+    tensoR.no_decoupler_point = tensoR.getAvgValue30();
+    RCLCPP_INFO(this->get_logger(), "Tarowanie rakiety bez decouplera: %d, %d", tensoL.no_decoupler_point, tensoR.no_decoupler_point);
+}
+
 void ArduinoWyrzutnia::setScaleLeft(double scale)
 {
     tensoL.scale = scale;
@@ -199,6 +206,10 @@ void ArduinoWyrzutnia::tareCallback(const gs_interfaces::msg::LoadCellsTare::Sha
     if(msg->tare_oxidizer)
     {
         tareEmptyRocketPoint();
+    }
+    if(msg->tare_pressurizer)
+    {
+        tareNoDecouplerPoint();
     }
 }
 

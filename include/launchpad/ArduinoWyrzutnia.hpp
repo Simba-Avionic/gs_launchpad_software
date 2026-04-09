@@ -38,6 +38,7 @@ public:
         int32_t raw_value = 0;                  // bez tarowania
         int32_t rocket_point = 0;               // tarujemy i kladziemy rakiete
         int32_t empty_rocket_point = 0;         // tarujemy i tankujemy paliwo
+        int32_t no_decoupler_point = 0;
         double scale = 1.0;
         float raw_kg = 0.0;
         float rocket_kg = 0.0;
@@ -65,6 +66,7 @@ public:
 
     void tareRocketPoint();
     void tareEmptyRocketPoint();
+    void tareNoDecouplerPoint();
     void setScaleLeft(double scale);
     void setScaleRight(double scale);
     void setLeanAngle(float angle);

@@ -24,7 +24,7 @@ Tanking::~Tanking()
 
 void Tanking::tankingControlCallback(const gs_interfaces::msg::TankingCommands::SharedPtr msg)
 {
-    RCLCPP_INFO(this->get_logger(), "Fueling control msg from %s  %d  %d  %d", msg->header.frame_id.c_str(), msg->valve_feed_oxidizer, msg->valve_feed_pressurizer, msg->decoupler_oxidizer);
+    RCLCPP_INFO(this->get_logger(), "Fueling control msg from %s  %u  %u  %d", msg->header.frame_id.c_str(), msg->valve_feed_oxidizer, msg->valve_feed_pressurizer, msg->decoupler_oxidizer);
     steerFueling(msg->valve_feed_oxidizer, msg->valve_feed_pressurizer, msg->valve_vent_oxidizer, msg->valve_vent_pressurizer, msg->decoupler_oxidizer, msg->decoupler_pressurizer);
 }
 
@@ -101,7 +101,7 @@ void Tanking::readingLoop()
 }
 
 void Tanking::steerFueling(
-    bool valve_feed_oxidizer, bool valve_feed_pressurizer, 
+    uint8_t valve_feed_oxidizer, uint8_t valve_feed_pressurizer, 
     bool valve_vent_oxidizer, bool valve_vent_pressurizer, 
     bool decoupler_oxidizer, bool decoupler_pressurizer
 )

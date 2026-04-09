@@ -121,6 +121,12 @@ const Message* Messenger::receive() {
   // }
   // Serial.println();
 
+  // for (int i = 0; i < total_n; i++)
+  // {
+  //     printf("%X ", read_buff[i]);
+  // }
+  // printf("\n");
+
   uartStats.stats.totalBytesReceived += n;
   for (int i = 0; i < total_n; i++) {
     Byte b = read_buff[i];

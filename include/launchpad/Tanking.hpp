@@ -47,7 +47,7 @@ private:
     std::thread readT;
     void readingLoop();
     void steerFueling(
-        bool valve_feed_oxidizer, bool valve_feed_pressurizer, 
+        uint8_t valve_feed_oxidizer, uint8_t valve_feed_pressurizer, 
         bool valve_vent_oxidizer, bool valve_vent_pressurizer, 
         bool decoupler_oxidizer, bool decoupler_pressurizer
     );
