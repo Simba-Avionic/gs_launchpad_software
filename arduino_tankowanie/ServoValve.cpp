@@ -66,9 +66,12 @@ void ServoValve::openWithExtraSteps()
   last_command = Command::STEP_OPEN;
 }
 
-void ServoValve::open()
+void ServoValve::open(uint8_t position)
 {
-  servo.write(0);
+  if (position == 2)
+    servo.write(0);
+  else if (position == 1)
+    servo.write(130);
   last_command = Command::SET_OPEN;
 }
 

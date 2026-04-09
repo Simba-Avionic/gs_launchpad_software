@@ -99,8 +99,8 @@ void setup() {
   valve_feed_oxidizer = new ServoValve(2, 460, 2280, A14, 10, 84);
   valve_feed_pressurizer = new ServoValve(3, 600, 2440, A15, 0, 100);
 
-  decoupler_oxidizer = new Decoupler(25, 23);
-  decoupler_pressurizer = new Decoupler(29, 27);
+  decoupler_oxidizer = new Decoupler(29, 27);
+  decoupler_pressurizer = new Decoupler(25, 23);
 
   valve_vent_oxidizer = new ElectroValve(31);
   valve_vent_pressurizer = new ElectroValve(33);
@@ -185,14 +185,14 @@ void check_commands_input()
       if (is_aborted) break;
       const GSUART::MsgZaworySterowanie* msgZaworySterowanie = static_cast<const GSUART::MsgZaworySterowanie*>(msg);
       // msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->openWithExtraSteps()     : valve_feed_oxidizer->close();
-      msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->open()     : valve_feed_oxidizer->close();     // wersja z instant open zaworu
+      msgZaworySterowanie->valve_feed_oxidizer      ? valve_feed_oxidizer->open(msgZaworySterowanie->valve_feed_oxidizer)     : valve_feed_oxidizer->close();     // wersja z instant open zaworu
       // msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->openWithExtraSteps()  : valve_feed_pressurizer->close();
-      msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->open()  : valve_feed_pressurizer->close();  // wersja z instant open zaworu
+      msgZaworySterowanie->valve_feed_pressurizer   ? valve_feed_pressurizer->open(msgZaworySterowanie->valve_feed_pressurizer)  : valve_feed_pressurizer->close();  // wersja z instant open zaworu
       msgZaworySterowanie->valve_vent_oxidizer      ? valve_vent_oxidizer->open()                   : valve_vent_oxidizer->close();
       msgZaworySterowanie->valve_vent_pressurizer   ? valve_vent_pressurizer->open()                : valve_vent_pressurizer->close();
       msgZaworySterowanie->decoupler_oxidizer       ? decoupler_oxidizer->open()                    : decoupler_oxidizer->close();
       msgZaworySterowanie->decoupler_pressurizer    ? decoupler_pressurizer->open()                 : decoupler_pressurizer->close();
-      send_valves_position();
+      // send_valves_position();
       last_command_time = millis();
       break;
     }

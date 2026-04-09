@@ -20,7 +20,7 @@ public:
 
   void openWithExtraSteps();
 
-  void open();
+  void open(uint8_t position = 2);
 
   void close();
 
