@@ -373,23 +373,27 @@ void MsgTemperature::deserialize(const Byte* bytes_in, const size_t size_in) {
 
 void MsgZaworySterowanie::serialize(Byte* bytes_out, size_t* size_out) const {
   if (bytes_out == nullptr || size_out == nullptr) return;
-  *size_out = sizeof(uint8_t);
+  *size_out = sizeof(uint8_t) * 3;
   uint8_t bools = 0;
-  bools |= (valve_feed_oxidizer ? 1 : 0) << 0;
-  bools |= (valve_feed_pressurizer ? 1 : 0) << 1;
+  // bools |= (valve_feed_oxidizer ? 1 : 0) << 0;
+  // bools |= (valve_feed_pressurizer ? 1 : 0) << 1;
   bools |= (valve_vent_oxidizer ? 1 : 0) << 2;
   bools |= (valve_vent_pressurizer ? 1 : 0) << 3;
   bools |= (decoupler_oxidizer ? 1 : 0) << 4;
   bools |= (decoupler_pressurizer ? 1 : 0) << 5;
-  memcpy(bytes_out, &bools, sizeof(uint8_t));
+  memcpy(bytes_out, &valve_feed_oxidizer, sizeof(valve_feed_oxidizer));
+  memcpy(bytes_out+sizeof(valve_feed_oxidizer), &valve_feed_pressurizer, sizeof(valve_feed_pressurizer));
+  memcpy(bytes_out+sizeof(valve_feed_oxidizer)+sizeof(valve_feed_pressurizer), &bools, sizeof(uint8_t));
 }
 
 void MsgZaworySterowanie::deserialize(const Byte* bytes_in, const size_t size_in) {
-  if (bytes_in == nullptr || size_in < sizeof(uint8_t)) return;
+  if (bytes_in == nullptr || size_in < sizeof(uint8_t) * 3) return;
+  memcpy(&valve_feed_oxidizer, bytes_in, sizeof(valve_feed_oxidizer));
+  memcpy(&valve_feed_pressurizer, bytes_in+sizeof(valve_feed_oxidizer), sizeof(valve_feed_pressurizer));
   uint8_t bools;
-  memcpy(&bools, bytes_in, sizeof(uint8_t));
-  valve_feed_oxidizer = (bools & (1 << 0)) != 0;
-  valve_feed_pressurizer = (bools & (1 << 1)) != 0;
+  memcpy(&bools, bytes_in+sizeof(valve_feed_oxidizer)+sizeof(valve_feed_pressurizer), sizeof(uint8_t));
+  // valve_feed_oxidizer = (bools & (1 << 0)) != 0;
+  // valve_feed_pressurizer = (bools & (1 << 1)) != 0;
   valve_vent_oxidizer = (bools & (1 << 2)) != 0;
   valve_vent_pressurizer = (bools & (1 << 3)) != 0;
   decoupler_oxidizer = (bools & (1 << 4)) != 0;

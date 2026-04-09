@@ -177,8 +177,10 @@ namespace GSUART
     {
     public:
         MsgZaworySterowanie() : Message(MsgID::ZAWORY_STEROWANIE) {}
-        bool valve_feed_oxidizer = false;
-        bool valve_feed_pressurizer = false;
+        // bool valve_feed_oxidizer = false;
+        uint8_t valve_feed_oxidizer = 0;
+        // bool valve_feed_pressurizer = false;
+        uint8_t valve_feed_pressurizer = 0;
         bool valve_vent_oxidizer = false;
         bool valve_vent_pressurizer = false;
         bool decoupler_oxidizer = false;
