@@ -93,7 +93,7 @@ void Messenger::send(const Message& msg) {
 
 const Message* Messenger::receive() {
   #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
-    if (serialPort->available() <= 0)
+    if (serialPort->available() <= 0 && extra_buff_data_size == 0)
       return nullptr;
   #endif
 
@@ -108,7 +108,18 @@ const Message* Messenger::receive() {
     memcpy(read_buff, extra_buff, extra_buff_data_size);
   int n = readFromSerialPort(read_buff+extra_buff_data_size, READ_FROM_SERIAL_SIZE);
   int total_n = n + extra_buff_data_size;
+  // Serial.println(); 
+  // Serial.print(n);
+  // Serial.print(" ");
+  // Serial.println(extra_buff_data_size);
   extra_buff_data_size = 0;
+
+  // for (int i=0; i<total_n; i++)
+  // {
+  //   Serial.print(read_buff[i], HEX);
+  //   Serial.print(" ");
+  // }
+  // Serial.println();
 
   uartStats.stats.totalBytesReceived += n;
   for (int i = 0; i < total_n; i++) {
