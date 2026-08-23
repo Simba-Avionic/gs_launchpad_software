@@ -1,0 +1,22 @@
+[Unit]
+Description=Ground Segment Launchpad Software - weight module node
+Wants=network-online.target
+Requires=dev-ttyAMA0.device
+After=network-online.target dev-ttyAMA0.device
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+SupplementaryGroups=dialout
+WorkingDirectory=/home/ubuntu/gs_launchpad_software
+ExecStartPre=/bin/sh -c 'until grep -qx 1 /sys/class/net/eth0/carrier 2>/dev/null && ip -4 -o addr show dev eth0 | grep -q "192.168.10.102/24"; do sleep 1; done'
+ExecStartPre=/bin/sleep 2
+ExecStart=/home/ubuntu/gs_launchpad_software/run_weight_module.sh
+Restart=on-failure
+RestartSec=3
+TimeoutStartSec=0
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target
