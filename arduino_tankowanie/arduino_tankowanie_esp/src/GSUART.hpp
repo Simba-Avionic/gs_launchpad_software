@@ -1,13 +1,20 @@
-#define GSUART_PLATFORM_ARDUINO     0
-#define GSUART_PLATFORM_RPI_UBUNTU  1
+#pragma once
 
-// Explicitly set the platform to Arduino right here:
-#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
+#ifndef GSUART_PLATFORM_ARDUINO
+#define GSUART_PLATFORM_ARDUINO     0
+#endif
+
+#ifndef GSUART_PLATFORM_RPI_UBUNTU
+#define GSUART_PLATFORM_RPI_UBUNTU  1
+#endif
 
 #ifndef GSUART_PLATFORM
+#if defined(ARDUINO)
+#define GSUART_PLATFORM GSUART_PLATFORM_ARDUINO
+#else
 #define GSUART_PLATFORM GSUART_PLATFORM_RPI_UBUNTU
 #endif
-#pragma once
+#endif
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_RPI_UBUNTU
     #include <cstdint>
@@ -17,8 +24,8 @@
 #endif
 
 #if GSUART_PLATFORM == GSUART_PLATFORM_ARDUINO
-    #include "HardwareSerial.h"
-    #include "stddef.h"
+    #include <Arduino.h>
+    #include <stddef.h>
 #endif
 
 namespace GSUART
