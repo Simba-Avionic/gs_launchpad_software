@@ -2,7 +2,11 @@
 
 The two services replace manually running `run_nodes_as_screens.sh`. They run
 the ROS 2 tanking and weight-module nodes directly, wait for their Raspberry Pi
-UART devices, and restart a node if it exits with an error.
+UART devices and the launchbox Ethernet address, and restart a node if it exits
+with an error. Waiting for Ethernet is important because ROS 2 DDS chooses its
+network interfaces when each node starts.
+The stop timeout prevents a stuck ROS serial-reader thread from blocking a
+service restart indefinitely.
 
 Install or update them on the launchbox:
 

@@ -9,7 +9,7 @@ ServoValve::ServoValve(int pin_servo, int pwm_min, int pwm_max, int pin_potentio
   pwm_max_us = pwm_max;
 
   // ESP32Servo clamps pulse widths below 500 us. This valve is calibrated
-  // down to 460 us, so drive the ESP32 LEDC peripheral directly.
+  // down to 400 us, so drive the ESP32 LEDC peripheral directly.
   ledcSetup(PWM_CHANNEL, PWM_FREQUENCY_HZ, PWM_RESOLUTION_BITS);
   ledcAttachPin(servo_pin, PWM_CHANNEL);
 
@@ -101,7 +101,7 @@ void ServoValve::open(uint8_t position)
   if (position == 2)
     writeAngle(0);
   else if (position == 1)
-    writeAngle(130);
+    writeAngle(90);
   last_command = Command::SET_OPEN;
 }
 

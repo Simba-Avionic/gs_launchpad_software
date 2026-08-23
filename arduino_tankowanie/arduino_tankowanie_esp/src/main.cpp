@@ -46,11 +46,11 @@ void setup()
     delay(100);
     analogReadResolution(12);
 
-    // PWM values unchanged from main firmware
+    // Calibrated PWM range: 400 us open, 1400 us midpoint, 2400 us closed.
     valve_feed_oxidizer = new ServoValve(
         27,
-        460,
-        2280,
+        400,
+        2400,
         A14,
         10,
         84
